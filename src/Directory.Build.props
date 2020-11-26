@@ -1,0 +1,23 @@
+﻿<Project>
+  <PropertyGroup>
+    <Version>0.0.1</Version>
+    <Authors>17mkh.com</Authors>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <LangVersion>Latest</LangVersion>
+    <TargetFramework>net5.0</TargetFramework>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <RootNamespacePrefix>Mkh</RootNamespacePrefix>
+    <AssemblyName>$(RootNamespacePrefix).$(MSBuildProjectName)</AssemblyName>
+    <RootNamespace>$(AssemblyName)</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <RunAnalyzersDuringLiveAnalysis>false</RunAnalyzersDuringLiveAnalysis>
+    <PackageOutputPath>$(SolutionDir)\_packages</PackageOutputPath>
+    <Company>南京臣文数字科技有限公司</Company>
+    <Copyright>Copyright：2020-2099</Copyright>
+    <PackageProjectUrl>https://www.17mkh.com/</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/17mkh/Mkh.Data</RepositoryUrl>
+  </PropertyGroup>
+</Project>
