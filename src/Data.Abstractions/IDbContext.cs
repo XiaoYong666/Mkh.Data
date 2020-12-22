@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using Microsoft.Extensions.Logging;
 using Mkh.Data.Abstractions.Adapter;
 using Mkh.Data.Abstractions.Descriptors;
-using Mkh.Data.Abstractions.Filters;
 
 namespace Mkh.Data.Abstractions
 {
@@ -26,9 +24,9 @@ namespace Mkh.Data.Abstractions
         DbOptions Options { get; }
 
         /// <summary>
-        /// 日志工厂
+        /// 日志记录器
         /// </summary>
-        ILoggerFactory LoggerFactory { get; }
+        IDbLogger Logger { get; }
 
         /// <summary>
         /// 数据库适配器
@@ -49,11 +47,6 @@ namespace Mkh.Data.Abstractions
         /// 仓储描述符列表
         /// </summary>
         IList<IRepositoryDescriptor> RepositoryDescriptors { get; }
-
-        /// <summary>
-        /// 过滤器引擎
-        /// </summary>
-        IFilterEngine FilterEngine { get; }
 
         #endregion
 

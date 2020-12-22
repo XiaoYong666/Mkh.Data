@@ -9,7 +9,7 @@ namespace Data.Adapter.MySql.Test
         [Fact]
         public async void SaveChangesTest()
         {
-            using var uow = Context.NewUnitOfWork();
+            using var uow = _dbContext.NewUnitOfWork();
             var categoryRepository = uow.Get<ICategoryRepository>();
             var articleRepository = uow.Get<IArticleRepository>();
 
@@ -35,7 +35,7 @@ namespace Data.Adapter.MySql.Test
         [Fact]
         public async void RollbackTest()
         {
-            using var uow = Context.NewUnitOfWork();
+            using var uow = _dbContext.NewUnitOfWork();
             var categoryRepository = uow.Get<ICategoryRepository>();
             var articleRepository = uow.Get<IArticleRepository>();
 

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Data;
+using System.Linq.Expressions;
 using System.Text;
 using Mkh.Data.Abstractions.Adapter;
-using Mkh.Data.Abstractions.Adapter.SqlBuildModels;
 using Mkh.Data.Abstractions.Descriptors;
 using MySql.Data.MySqlClient;
 
@@ -27,17 +27,18 @@ namespace Mkh.Data.Adapter.MySql
         /// </summary>
         public override string IdentitySql => "SELECT LAST_INSERT_ID() ID;";
 
-        /// <summary>
-        /// 长度函数
-        /// </summary>
-        public override string FuncLength => "CHAR_LENGTH";
-
         public override IDbConnection NewConnection(string connectionString)
         {
             return new MySqlConnection(connectionString);
         }
 
-        private string GenerateQuerySql(string select, string table, string where, string sort, int skip, int take, string groupBy = null, string having = null)
+        public override string GenerateFirstSql(string version, string @select, string table, string @where, string sort, string groupBy = null,
+            string having = null)
+        {
+            return GeneratePagingSql(version, select, table, where, sort, 0, 1, groupBy, having);
+        }
+
+        public override string GeneratePagingSql(string version, string select, string table, string where, string sort, int skip, int take, string groupBy = null, string having = null)
         {
             var sqlBuilder = new StringBuilder();
             sqlBuilder.AppendFormat("SELECT {0} FROM {1}", select, table);
@@ -55,16 +56,6 @@ namespace Mkh.Data.Adapter.MySql
 
             sqlBuilder.AppendFormat(" LIMIT {0},{1}", skip, take);
             return sqlBuilder.ToString();
-        }
-
-        public override string GeneratePagingSql(PagingSqlBuildModel model)
-        {
-            return GenerateQuerySql(model.Select, model.TableName, model.Where, model.Sort, model.Skip, model.Take, model.GroupBy, model.Having);
-        }
-
-        public override string GenerateFirstSql(FirstSqlBuildModel model)
-        {
-            return GenerateQuerySql(model.Select, model.TableName, model.Where, model.Sort, 0, 1, model.GroupBy, model.Having);
         }
 
         public override void ResolveColumn(IColumnDescriptor columnDescriptor)
@@ -204,6 +195,81 @@ namespace Mkh.Data.Adapter.MySql
                 var d = columnDescriptor.PrecisionD < 1 ? 4 : columnDescriptor.PrecisionD;
 
                 columnDescriptor.TypeName = $"FLOAT({m},{d})";
+            }
+        }
+
+        public override string Method2Func(MethodCallExpression methodCallExpression, string columnName)
+        {
+            var methodName = methodCallExpression.Method.Name;
+            if (methodName == "Substring")
+            {
+                var start = ((ConstantExpression)methodCallExpression.Arguments[0]).Value.ToInt() + 1;
+                if (methodCallExpression.Arguments.Count > 1)
+                {
+                    var length = ((ConstantExpression)methodCallExpression.Arguments[1]).Value.ToInt();
+                    return $"SUBSTR({columnName},{start},{length})";
+                }
+
+                return $"SUBSTR({columnName},{start})";
+            }
+
+            if (methodName == "ToString")
+            {
+                if (methodCallExpression.Object!.Type.IsDateTime())
+                {
+                    var arg = ((ConstantExpression)methodCallExpression.Arguments[0]).Value;
+                    if (arg != null)
+                    {
+                        var format = arg.ToString();
+                        format = format!.Replace("YYYY", "%Y")
+                            .Replace("YY", "%y")
+                            .Replace("MM", "%m")
+                            .Replace("DD", "%d")
+                            .Replace("HH", "%k")
+                            .Replace("mm", "%i")
+                            .Replace("ss", "%s");
+
+                        return $"DATE_FORMAT({columnName},'{format}')";
+                    }
+                }
+            }
+
+            if (methodName == "Replace")
+            {
+                var oldValue = ((ConstantExpression)methodCallExpression.Arguments[0]).Value;
+                var newValue = ((ConstantExpression)methodCallExpression.Arguments[1]).Value;
+
+                return $"REPLACE({columnName},'{oldValue}','{newValue}')";
+            }
+
+            if (methodName == "ToLower")
+            {
+                return $"LOWER({columnName})";
+            }
+
+            if (methodName == "ToUpper")
+            {
+                return $"UPPER({columnName})";
+            }
+
+            return string.Empty;
+        }
+
+        public override string Property2Func(string propertyName, string columnName)
+        {
+            switch (propertyName)
+            {
+                case "Length":
+                    return $"CHAR_LENGTH({columnName})";
+                case "Count":
+                    return "COUNT(0)";
+                case "Sum":
+                case "Avg":
+                case "Max":
+                case "Min":
+                    return $"{propertyName.ToUpper()}({columnName})";
+                default:
+                    return string.Empty;
             }
         }
     }

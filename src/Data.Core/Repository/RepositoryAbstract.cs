@@ -4,7 +4,6 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
-using Microsoft.Extensions.Logging;
 using Mkh.Data.Abstractions;
 using Mkh.Data.Abstractions.Adapter;
 using Mkh.Data.Abstractions.Descriptors;
@@ -19,7 +18,7 @@ namespace Mkh.Data.Core.Repository
 
         private IEntitySqlDescriptor _sql;
         private IDbAdapter _adapter;
-        private ILogger _logger;
+        private IDbLogger _logger;
 
         #endregion
 
@@ -63,11 +62,7 @@ namespace Mkh.Data.Core.Repository
 
             _sql = EntityDescriptor.SqlDescriptor;
             _adapter = context.Adapter;
-
-            if (context.LoggerFactory != null)
-            {
-                _logger = context.LoggerFactory.CreateLogger<RepositoryAbstract<TEntity>>();
-            }
+            _logger = context.Logger;
         }
 
         /// <summary>
@@ -95,7 +90,7 @@ namespace Mkh.Data.Core.Repository
         /// <param name="param">参数</param>
         /// <param name="commandType">命令类型</param>
         /// <returns></returns>
-        protected Task<int> Execute(string sql, object param = null, CommandType? commandType = null)
+        public Task<int> Execute(string sql, object param = null, CommandType? commandType = null)
         {
             return Conn.ExecuteAsync(sql, param, Transaction, commandType: commandType);
         }
@@ -112,7 +107,7 @@ namespace Mkh.Data.Core.Repository
         /// <param name="param">参数</param>
         /// <param name="commandType">命令类型</param>
         /// <returns></returns>
-        protected Task<T> ExecuteScalar<T>(string sql, object param = null, CommandType? commandType = null)
+        public Task<T> ExecuteScalar<T>(string sql, object param = null, CommandType? commandType = null)
         {
             return Conn.ExecuteScalarAsync<T>(sql, param, Transaction, commandType: commandType);
         }
@@ -128,7 +123,7 @@ namespace Mkh.Data.Core.Repository
         /// <param name="param">参数</param>
         /// <param name="commandType">命令类型</param>
         /// <returns></returns>
-        protected Task<IDataReader> ExecuteReader(string sql, object param = null, CommandType? commandType = null)
+        public Task<IDataReader> ExecuteReader(string sql, object param = null, CommandType? commandType = null)
         {
             return Conn.ExecuteReaderAsync(sql, param, Transaction, commandType: commandType);
         }
@@ -144,7 +139,7 @@ namespace Mkh.Data.Core.Repository
         /// <param name="param">参数</param>
         /// <param name="commandType">命令类型</param>
         /// <returns></returns>
-        protected Task<dynamic> QueryFirstOrDefault(string sql, object param = null, CommandType? commandType = null)
+        public Task<dynamic> QueryFirstOrDefault(string sql, object param = null, CommandType? commandType = null)
         {
             return Conn.QueryFirstOrDefaultAsync(sql, param, Transaction, commandType: commandType);
         }
@@ -156,7 +151,7 @@ namespace Mkh.Data.Core.Repository
         /// <param name="param">参数</param>
         /// <param name="commandType">命令类型</param>
         /// <returns></returns>
-        protected Task<T> QueryFirstOrDefault<T>(string sql, object param = null, CommandType? commandType = null)
+        public Task<T> QueryFirstOrDefault<T>(string sql, object param = null, CommandType? commandType = null)
         {
             return Conn.QueryFirstOrDefaultAsync<T>(sql, param, Transaction, commandType: commandType);
         }
@@ -172,7 +167,7 @@ namespace Mkh.Data.Core.Repository
         /// <param name="param">参数</param>
         /// <param name="commandType">命令类型</param>
         /// <returns></returns>
-        protected Task<dynamic> QuerySingleOrDefault(string sql, object param = null, CommandType? commandType = null)
+        public Task<dynamic> QuerySingleOrDefault(string sql, object param = null, CommandType? commandType = null)
         {
             return Conn.QuerySingleOrDefaultAsync(sql, param, Transaction, commandType: commandType);
         }
@@ -184,7 +179,7 @@ namespace Mkh.Data.Core.Repository
         /// <param name="param">参数</param>
         /// <param name="commandType">命令类型</param>
         /// <returns></returns>
-        protected Task<T> QuerySingleOrDefault<T>(string sql, object param = null, CommandType? commandType = null)
+        public Task<T> QuerySingleOrDefault<T>(string sql, object param = null, CommandType? commandType = null)
         {
             return Conn.QuerySingleOrDefaultAsync<T>(sql, param, Transaction, commandType: commandType);
         }
@@ -200,7 +195,7 @@ namespace Mkh.Data.Core.Repository
         /// <param name="param">参数</param>
         /// <param name="commandType">命令类型</param>
         /// <returns></returns>
-        protected Task<SqlMapper.GridReader> QueryMultiple(string sql, object param = null, CommandType? commandType = null)
+        public Task<SqlMapper.GridReader> QueryMultiple(string sql, object param = null, CommandType? commandType = null)
         {
             return Conn.QueryMultipleAsync(sql, param, Transaction, commandType: commandType);
         }
@@ -209,7 +204,14 @@ namespace Mkh.Data.Core.Repository
 
         #region ==Query==
 
-        protected Task<IEnumerable<dynamic>> Query(string sql, object param = null, CommandType? commandType = null)
+        /// <summary>
+        /// 查询结果集返回动态类型
+        /// </summary>
+        /// <param name="sql"></param>
+        /// <param name="param"></param>
+        /// <param name="commandType"></param>
+        /// <returns></returns>
+        public Task<IEnumerable<dynamic>> Query(string sql, object param = null, CommandType? commandType = null)
         {
             return Conn.QueryAsync(sql, param, Transaction, commandType: commandType);
         }
@@ -221,7 +223,7 @@ namespace Mkh.Data.Core.Repository
         /// <param name="param">参数</param>
         /// <param name="commandType">命令类型</param>
         /// <returns></returns>
-        protected Task<IEnumerable<T>> Query<T>(string sql, object param = null, CommandType? commandType = null)
+        public Task<IEnumerable<T>> Query<T>(string sql, object param = null, CommandType? commandType = null)
         {
             return Conn.QueryAsync<T>(sql, param, Transaction, commandType: commandType);
         }

@@ -3,8 +3,6 @@ using System.Linq;
 using System.Reflection;
 using Mkh.Data;
 using Mkh.Data.Abstractions;
-using Mkh.Data.Abstractions.Filters;
-using Mkh.Data.Abstractions.Filters.Entity;
 using Mkh.Data.Core.Descriptors;
 
 // ReSharper disable once CheckNamespace
@@ -15,32 +13,6 @@ namespace Microsoft.Extensions.DependencyInjection
     /// </summary>
     public static class DbBuilderExtensions
     {
-        /// <summary>
-        /// 添加全局过滤器
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <param name="filter"></param>
-        /// <returns></returns>
-        public static IDbBuilder AddGlobalFilter(this IDbBuilder builder, IFilter filter)
-        {
-            var filterEngine = builder.DbContext.FilterEngine;
-            var type = filter.GetType();
-            if (typeof(IEntityAddFilter) == type)
-            {
-                filterEngine.EntityAddFilters.Add((IEntityAddFilter)filter);
-            }
-            else if (typeof(IEntityDeleteFilter) == type)
-            {
-                filterEngine.EntityDeleteFilters.Add((IEntityDeleteFilter)filter);
-            }
-            else if (typeof(IEntityUpdateFilter) == type)
-            {
-                filterEngine.EntityUpdateFilters.Add((IEntityUpdateFilter)filter);
-            }
-
-            return builder;
-        }
-
         /// <summary>
         /// 从指定程序集加载仓储
         /// </summary>
@@ -58,11 +30,9 @@ namespace Microsoft.Extensions.DependencyInjection
                     var interfaceType = type.GetInterfaces()[2];
                     var instance = Activator.CreateInstance(type);
                     var initMethod = type.GetMethod("Init", BindingFlags.Instance | BindingFlags.NonPublic);
-                    // ReSharper disable once PossibleNullReferenceException
-                    initMethod.Invoke(instance, new Object[] { builder.DbContext });
+                    initMethod!.Invoke(instance, new Object[] { builder.DbContext });
 
-                    // ReSharper disable once AssignNullToNotNullAttribute
-                    builder.Services.AddSingleton(interfaceType, instance);
+                    builder.Services.AddSingleton(interfaceType, instance!);
 
                     //保存仓储描述符
                     builder.DbContext.RepositoryDescriptors.Add(new RepositoryDescriptor(interfaceType, type));

@@ -1,12 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Mkh.Data.Abstractions.Queryable;
+using Mkh.Data.Core.Queryable;
 
 namespace Mkh.Data.Core.Repository
 {
-    class RepositoryAbstract
+    public abstract partial class RepositoryAbstract<TEntity>
     {
+        public IQueryable<TEntity> Find(bool noLock = true)
+        {
+            return new Queryable<TEntity>(this, noLock);
+        }
     }
 }

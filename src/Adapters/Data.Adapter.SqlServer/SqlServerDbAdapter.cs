@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Data;
 using System.Data.SqlClient;
+using System.Linq.Expressions;
 using System.Text;
 using Mkh.Data.Abstractions.Adapter;
-using Mkh.Data.Abstractions.Adapter.SqlBuildModels;
 using Mkh.Data.Abstractions.Descriptors;
 
 namespace Mkh.Data.Adapter.SqlServer
@@ -27,17 +27,17 @@ namespace Mkh.Data.Adapter.SqlServer
         /// </summary>
         public override string IdentitySql => "SELECT SCOPE_IDENTITY() ID;";
 
-        /// <summary>
-        /// 长度函数
-        /// </summary>
-        public override string FuncLength => "LEN";
-
         public override IDbConnection NewConnection(string connectionString)
         {
             return new SqlConnection(connectionString);
         }
 
-        private string GenerateQuerySql(string select, string table, string where, string sort, int skip, int take, string groupBy, string having, string version)
+        public override string GenerateFirstSql(string version, string @select, string table, string @where, string sort, string groupBy = null, string having = null)
+        {
+            return GeneratePagingSql(version, select, table, where, sort, 0, 1, groupBy, having);
+        }
+
+        public override string GeneratePagingSql(string version, string select, string table, string where, string sort, int skip, int take, string groupBy = null, string having = null)
         {
             var sqlBuilder = new StringBuilder();
 
@@ -73,16 +73,6 @@ namespace Mkh.Data.Adapter.SqlServer
             }
 
             return sqlBuilder.ToString();
-        }
-
-        public override string GeneratePagingSql(PagingSqlBuildModel model)
-        {
-            return GenerateQuerySql(model.Select, model.TableName, model.Where, model.Sort, model.Skip, model.Take, model.GroupBy, model.Having, model.Version);
-        }
-
-        public override string GenerateFirstSql(FirstSqlBuildModel model)
-        {
-            return GenerateQuerySql(model.Select, model.TableName, model.Where, model.Sort, 0, 1, model.GroupBy, model.Having, model.Version);
         }
 
         public override void ResolveColumn(IColumnDescriptor columnDescriptor)
@@ -223,6 +213,16 @@ namespace Mkh.Data.Adapter.SqlServer
 
                 columnDescriptor.TypeName = $"FLOAT({m},{d})";
             }
+        }
+
+        public override string Method2Func(MethodCallExpression methodCallExpression, string columnName)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override string Property2Func(string methodName, string columnName)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -9,8 +9,8 @@ namespace Data.Adapter.MySql.Test
 {
     public class BaseTest
     {
-        protected readonly IServiceProvider ServiceProvider;
-        protected readonly IDbContext Context;
+        protected readonly IServiceProvider _serviceProvider;
+        protected readonly IDbContext _dbContext;
 
         public BaseTest()
         {
@@ -29,8 +29,8 @@ namespace Data.Adapter.MySql.Test
                 .AddMkhDbWidthMySql<BlogDbContext>(connString)
                 .AddRepositories(typeof(BlogDbContext).Assembly);
 
-            ServiceProvider = services.BuildServiceProvider();
-            Context = ServiceProvider.GetService<BlogDbContext>();
+            _serviceProvider = services.BuildServiceProvider();
+            _dbContext = _serviceProvider.GetService<BlogDbContext>();
         }
     }
 }

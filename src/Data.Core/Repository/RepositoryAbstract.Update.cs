@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Mkh.Data.Core.Filters;
 
 namespace Mkh.Data.Core.Repository
 {
@@ -18,48 +16,54 @@ namespace Mkh.Data.Core.Repository
 
         protected async Task<bool> UpdateAsync(TEntity entity, string tableName)
         {
-            var sql = UpdateBefore(entity, tableName);
-            var result = await Execute(sql, entity) > 0;
-            UpdateAfter(entity, sql);
-            return result;
-        }
-
-        private string UpdateBefore(TEntity entity, string tableName)
-        {
             Check.NotNull(entity, nameof(entity));
 
-            if (EntityDescriptor.PrimaryKey.IsNo)
-                throw new ArgumentException("没有主键的实体对象无法使用该方法", nameof(entity));
+            SetUpdateInfo(entity);
 
             var sql = _sql.GetUpdateSingle(tableName);
 
-            var filters = DbContext.FilterEngine.EntityUpdateFilters;
-            if (filters.NotNullAndEmpty())
-            {
-                var context = new EntityUpdateFilterContext(DbContext, EntityDescriptor, entity, sql);
-                foreach (var filter in filters)
-                {
-                    filter.OnBefore(context);
-                }
-            }
-
-            _logger?.LogDebug("Update:{@sql}", sql);
-
-            return sql;
+            var result = await Execute(sql, entity) > 0;
+            return result;
         }
 
         /// <summary>
-        /// 新增后
+        /// 设置更新信息
         /// </summary>
-        private void UpdateAfter(TEntity entity, string sql)
+        private void SetUpdateInfo(TEntity entity)
         {
-            var filters = DbContext.FilterEngine.EntityUpdateFilters;
-            if (filters.NotNullAndEmpty())
+            //设置实体的修改人编号、修改人姓名、修改时间
+            var descriptor = EntityDescriptor;
+            if (descriptor.IsEntityBase)
             {
-                var context = new EntityUpdateFilterContext(DbContext, EntityDescriptor, entity, sql);
-                foreach (var filter in filters)
+                foreach (var column in descriptor.Columns)
                 {
-                    filter.OnAfter(context);
+                    var colName = column.PropertyInfo.Name;
+                    if (colName.Equals("ModifiedBy"))
+                    {
+                        var modifiedBy = column.PropertyInfo.GetValue(entity);
+                        if (modifiedBy == null || (Guid)modifiedBy == Guid.Empty)
+                        {
+                            column.PropertyInfo.SetValue(entity, DbContext.AccountResolver.AccountId);
+                        }
+                        continue;
+                    }
+                    if (colName.Equals("Modifier"))
+                    {
+                        var modifier = column.PropertyInfo.GetValue(entity);
+                        if (modifier == null)
+                        {
+                            column.PropertyInfo.SetValue(entity, DbContext.AccountResolver.AccountName);
+                        }
+                        continue;
+                    }
+                    if (colName.Equals("ModifiedTime"))
+                    {
+                        var modifiedTime = column.PropertyInfo.GetValue(entity);
+                        if (modifiedTime == null)
+                        {
+                            column.PropertyInfo.SetValue(entity, DateTime.Now);
+                        }
+                    }
                 }
             }
         }

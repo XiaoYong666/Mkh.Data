@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Mkh.Data.Core.Filters;
+using Mkh.Data.Abstractions.Entities;
 
 namespace Mkh.Data.Core.Repository
 {
@@ -25,9 +23,14 @@ namespace Mkh.Data.Core.Repository
         /// <returns></returns>
         protected async Task Add(TEntity entity, string tableName)
         {
+            if (entity == null)
+                throw new ArgumentNullException(nameof(entity), "entity is null");
+
             var sql = _sql.GetAdd(tableName);
-            sql = AddBefore(entity, sql);
-            _logger?.LogError("Add:{@sql}", sql);
+
+            SetCreateInfo(entity);
+
+            _logger?.Write("Add", sql);
 
             var primaryKey = EntityDescriptor.PrimaryKey;
             if (primaryKey.IsInt)
@@ -39,8 +42,7 @@ namespace Mkh.Data.Core.Repository
                 {
                     primaryKey.PropertyInfo.SetValue(entity, id);
 
-                    _logger?.LogDebug("NewID:{@id}", id);
-                    AddAfter(entity, sql);
+                    _logger?.Write("NewID", id.ToString());
                     return;
                 }
             }
@@ -54,9 +56,7 @@ namespace Mkh.Data.Core.Repository
                 {
                     primaryKey.PropertyInfo.SetValue(entity, id);
 
-                    _logger?.LogDebug("NewID:{@id}", id);
-                    AddAfter(entity, sql);
-
+                    _logger?.Write("NewID", id.ToString());
                     return;
                 }
             }
@@ -67,18 +67,16 @@ namespace Mkh.Data.Core.Repository
                 if (id == Guid.Empty)
                     primaryKey.PropertyInfo.SetValue(entity, Guid.NewGuid());
 
-                _logger?.LogDebug("NewID:{@id}", id);
+                _logger?.Write("NewID", id.ToString());
 
                 if (await Execute(sql, entity) > 0)
                 {
-                    AddAfter(entity, sql);
                     return;
                 }
             }
 
             if (await Execute(sql, entity) > 0)
             {
-                AddAfter(entity, sql);
                 return;
             }
 
@@ -86,44 +84,46 @@ namespace Mkh.Data.Core.Repository
         }
 
         /// <summary>
-        /// 新增前
+        /// 设置创建信息
         /// </summary>
-        private string AddBefore(TEntity entity, string sql)
+        private void SetCreateInfo(IEntity entity)
         {
-            if (entity == null)
-                throw new ArgumentNullException(nameof(entity), "entity is null");
-
-            var filters = DbContext.FilterEngine.EntityAddFilters;
-            if (filters.NotNullAndEmpty())
+            //设置实体的添加人编号、添加人姓名、添加时间
+            var descriptor = EntityDescriptor;
+            if (descriptor.IsEntityBase)
             {
-                var context = new EntityAddFilterContext(DbContext, EntityDescriptor, entity, sql);
-                foreach (var filter in filters)
+                foreach (var column in descriptor.Columns)
                 {
-                    filter.OnBefore(context);
-                }
-
-                return context.Sql;
-            }
-
-
-
-            return sql;
-        }
-
-        /// <summary>
-        /// 新增后
-        /// </summary>
-        private void AddAfter(TEntity entity, string sql)
-        {
-            var filters = DbContext.FilterEngine.EntityAddFilters;
-            if (filters.NotNullAndEmpty())
-            {
-                var context = new EntityAddFilterContext(DbContext, EntityDescriptor, entity, sql);
-                foreach (var filter in filters)
-                {
-                    filter.OnAfter(context);
+                    var colName = column.PropertyInfo.Name;
+                    if (colName.Equals("CreatedBy"))
+                    {
+                        var createdBy = column.PropertyInfo.GetValue(entity);
+                        if (createdBy == null || (Guid)createdBy == Guid.Empty)
+                        {
+                            column.PropertyInfo.SetValue(entity, DbContext.AccountResolver.AccountId);
+                        }
+                        continue;
+                    }
+                    if (colName.Equals("Creator"))
+                    {
+                        var creator = column.PropertyInfo.GetValue(entity);
+                        if (creator == null)
+                        {
+                            column.PropertyInfo.SetValue(entity, DbContext.AccountResolver.AccountName);
+                        }
+                        continue;
+                    }
+                    if (colName.Equals("CreatedTime"))
+                    {
+                        var createdTime = column.PropertyInfo.GetValue(entity);
+                        if (createdTime == null)
+                        {
+                            column.PropertyInfo.SetValue(entity, DateTime.Now);
+                        }
+                    }
                 }
             }
         }
     }
 }
+

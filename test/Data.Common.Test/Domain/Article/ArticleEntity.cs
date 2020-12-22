@@ -4,7 +4,6 @@ using Mkh.Data.Abstractions.Entities;
 
 namespace Data.Common.Test.Domain.Article
 {
-    [CustomEntityAddFilter]
     public class ArticleEntity : EntityBase, ISoftDelete
     {
         public int CategoryId { get; set; }
@@ -15,11 +14,10 @@ namespace Data.Common.Test.Domain.Article
         [Length(0)]
         public string Content { get; set; }
 
+        [Column("IsPublished")]
         public bool Published { get; set; }
 
         public DateTime? PublishedTime { get; set; }
-
-        public TimeSpan TimeSpan { get; set; }
 
         public bool Deleted { get; set; }
 

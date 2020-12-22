@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using Mkh.Data.Abstractions;
 using Mkh.Data.Abstractions.Adapter;
 using Mkh.Data.Core;
-using Mkh.Data.Core.Filters.EntityBase;
+using Mkh.Data.Core.Internal;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -43,20 +43,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton(dbContextType, dbContext);
 
             var builder = new DbBuilder(services, dbContext);
-            builder.AddGlobalFilters();
             return builder;
-        }
-
-        /// <summary>
-        /// 添加的内置全局过滤器
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <returns></returns>
-        private static void AddGlobalFilters(this IDbBuilder builder)
-        {
-            var filterEngine = builder.DbContext.FilterEngine;
-            filterEngine.EntityAddFilters.Add(new EntityBaseAddFilter());
-            filterEngine.EntityUpdateFilters.Add(new EntityBaseUpdateFilter());
         }
     }
 }

@@ -6,7 +6,7 @@ namespace Mkh.Data.Core.Extensions
     internal static class EntityDescriptorExtensions
     {
         /// <summary>
-        /// 获取已删除字段列明
+        /// 获取已删除字段名称
         /// </summary>
         /// <returns></returns>
         public static string GetDeletedColumnName(this IEntityDescriptor descriptor)

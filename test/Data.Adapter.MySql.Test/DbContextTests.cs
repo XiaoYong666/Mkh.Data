@@ -11,7 +11,7 @@ namespace Data.Adapter.MySql.Test
         [Fact]
         public void NewConnectionTest()
         {
-            using var con = Context.NewConnection();
+            using var con = _dbContext.NewConnection();
 
             Assert.NotNull(con);
             Assert.Equal(ConnectionState.Closed, con.State);

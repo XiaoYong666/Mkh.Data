@@ -12,18 +12,17 @@ namespace Mkh.Data.Abstractions.Entities
         /// <summary>
         /// 创建人编号
         /// </summary>
-        public virtual Guid? CreatedBy { get; set; }
+        public virtual Guid CreatedBy { get; set; }
 
         /// <summary>
         /// 创建人名称
         /// </summary>
-        [Nullable]
         public virtual string Creator { get; set; }
 
         /// <summary>
         /// 创建时间
         /// </summary>
-        public virtual DateTime? CreatedTime { get; set; }
+        public virtual DateTime CreatedTime { get; set; }
 
         /// <summary>
         /// 修改人编号

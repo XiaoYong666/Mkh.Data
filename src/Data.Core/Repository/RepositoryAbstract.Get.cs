@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using Mkh.Data.Abstractions.Adapter;
 
 namespace Mkh.Data.Core.Repository
@@ -30,7 +29,7 @@ namespace Mkh.Data.Core.Repository
             else
                 sql = _sql.GetGet(tableName);
 
-            _logger?.LogDebug("Get:{@sql}", sql);
+            _logger?.Write("Get", sql);
             return QuerySingleOrDefault<TEntity>(sql, dynParams);
         }
     }

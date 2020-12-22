@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 
 namespace Mkh.Data.Core.Repository
 {
@@ -19,7 +18,7 @@ namespace Mkh.Data.Core.Repository
             var dynParams = GetIdParameter(id);
             var sql = _sql.GetExists(tableName);
 
-            _logger?.LogDebug("ExistsAsync:{@sql}", sql);
+            _logger?.Write("Exists", sql);
             return await QuerySingleOrDefault<int>(sql, dynParams) > 0;
         }
 

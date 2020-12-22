@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using Microsoft.Extensions.Logging;
 using Mkh.Data.Abstractions;
 using Mkh.Data.Abstractions.Adapter;
 using Mkh.Data.Abstractions.Descriptors;
-using Mkh.Data.Abstractions.Filters;
-using Mkh.Data.Core.Filters;
 
 namespace Mkh.Data.Core
 {
@@ -18,7 +15,7 @@ namespace Mkh.Data.Core
 
         public DbOptions Options { get; internal set; }
 
-        public ILoggerFactory LoggerFactory { get; internal set; }
+        public IDbLogger Logger { get; internal set; }
 
         public IDbAdapter Adapter { get; internal set; }
 
@@ -27,8 +24,6 @@ namespace Mkh.Data.Core
         public IList<IEntityDescriptor> EntityDescriptors { get; } = new List<IEntityDescriptor>();
 
         public IList<IRepositoryDescriptor> RepositoryDescriptors { get; } = new List<IRepositoryDescriptor>();
-
-        public IFilterEngine FilterEngine { get; } = new FilterEngine();
 
         #endregion
 

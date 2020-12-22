@@ -1,9 +1,7 @@
-﻿using System;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Data;
-using System.Reflection;
+using System.Linq.Expressions;
 using System.Text;
-using Mkh.Data.Abstractions.Adapter.SqlBuildModels;
 using Mkh.Data.Abstractions.Descriptors;
 
 namespace Mkh.Data.Abstractions.Adapter
@@ -41,26 +39,6 @@ namespace Mkh.Data.Abstractions.Adapter
         string IdentitySql { get; }
 
         /// <summary>
-        /// 字符串截取函数
-        /// </summary>
-        string FuncSubstring { get; }
-
-        /// <summary>
-        /// 字符串长度函数
-        /// </summary>
-        string FuncLength { get; }
-
-        /// <summary>
-        /// 转小写函数
-        /// </summary>
-        string FuncLower { get; }
-
-        /// <summary>
-        /// 转大写函数
-        /// </summary>
-        string FuncUpper { get; }
-
-        /// <summary>
         /// SQL语句小写
         /// </summary>
         bool SqlLowerCase { get; }
@@ -78,7 +56,7 @@ namespace Mkh.Data.Abstractions.Adapter
         #endregion
 
         #region ==方法==
-        
+
         /// <summary>
         /// 给定的值附加引号
         /// </summary>
@@ -119,20 +97,34 @@ namespace Mkh.Data.Abstractions.Adapter
         /// <summary>
         /// 分页
         /// </summary>
-        /// <returns></returns>
-        string GeneratePagingSql(PagingSqlBuildModel model);
+        string GeneratePagingSql(string version, string select, string table, string where, string sort, int skip, int take, string groupBy = null, string having = null);
 
         /// <summary>
         /// 生成获取第一条数据的Sql
         /// </summary>
-        /// <returns></returns>
-        string GenerateFirstSql(FirstSqlBuildModel model);
+        string GenerateFirstSql(string version, string select, string table, string where, string sort, string groupBy = null, string having = null);
 
         /// <summary>
         /// 解析列
         /// </summary>
         /// <param name="columnDescriptor"></param>
         void ResolveColumn(IColumnDescriptor columnDescriptor);
+
+        /// <summary>
+        /// 方法转数据库函数
+        /// </summary>
+        /// <param name="methodCallExpression">表达式</param>
+        /// <param name="columnName">列名称</param>
+        /// <returns></returns>
+        string Method2Func(MethodCallExpression methodCallExpression, string columnName);
+
+        /// <summary>
+        /// 属性转数据库函数
+        /// </summary>
+        /// <param name="propertyName">属性名</param>
+        /// <param name="columnName">列名</param>
+        /// <returns></returns>
+        string Property2Func(string propertyName, string columnName);
 
         #endregion
     }

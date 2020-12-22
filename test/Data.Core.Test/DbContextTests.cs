@@ -52,11 +52,5 @@ namespace Data.Core.Test
             var accountResolverType = _context.AccountResolver.GetType();
             Assert.Equal(typeof(CustomAccountResolver), accountResolverType);
         }
-
-        [Fact]
-        public void LoggerFactoryTest()
-        {
-            Assert.NotNull(_context.LoggerFactory);
-        }
     }
 }

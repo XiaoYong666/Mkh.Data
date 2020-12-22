@@ -1,6 +1,7 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using Data.Common.Test.Domain.Article;
 using Microsoft.Extensions.DependencyInjection;
+using Mkh.Data.Abstractions.Extensions;
 using Xunit;
 
 namespace Data.Adapter.MySql.Test
@@ -11,7 +12,7 @@ namespace Data.Adapter.MySql.Test
 
         public RepositoryTest()
         {
-            _repository = ServiceProvider.GetService<IArticleRepository>();
+            _repository = _serviceProvider.GetService<IArticleRepository>();
         }
 
         [Fact]
@@ -20,8 +21,7 @@ namespace Data.Adapter.MySql.Test
             var article = new ArticleEntity
             {
                 Title = "test",
-                Content = "test",
-                TimeSpan = new TimeSpan(1, 1, 1, 1)
+                Content = "test"
             };
 
             await _repository.Add(article);
@@ -119,8 +119,7 @@ namespace Data.Adapter.MySql.Test
             var article = new ArticleEntity
             {
                 Title = "test",
-                Content = "test",
-                TimeSpan = new TimeSpan(1, 1, 1, 1)
+                Content = "test"
             };
 
             await _repository.Add(article);
@@ -132,6 +131,31 @@ namespace Data.Adapter.MySql.Test
 
             exists = await _repository.Exists(100000);
             Assert.False(exists);
+        }
+
+        [Fact]
+        public async void ListTest()
+        {
+            var list = await _repository.Find().List();
+
+            Assert.NotEmpty(list);
+        }
+
+        [Fact]
+        public async void WhereTest()
+        {
+            var list = await _repository.Find().Where(m => m.Id > 0).List();
+
+            Assert.NotEmpty(list);
+        }
+
+        [Fact]
+        public async void NotContainsTest()
+        {
+            var ids = new List<int>();
+            var list = await _repository.Find().Where(m => ids.NotContains(m.Id)).List();
+
+            Assert.NotEmpty(list);
         }
     }
 }

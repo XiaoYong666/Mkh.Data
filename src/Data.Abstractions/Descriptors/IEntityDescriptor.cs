@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Mkh.Data.Abstractions.Filters;
 
 namespace Mkh.Data.Abstractions.Descriptors
 {
@@ -45,12 +44,7 @@ namespace Mkh.Data.Abstractions.Descriptors
         IEntitySqlDescriptor SqlDescriptor { get; }
 
         /// <summary>
-        /// 操作过滤器引擎
-        /// </summary>
-        IFilterEngine FilterEngine { get; }
-
-        /// <summary>
-        /// 是否使用实体基类
+        /// 是否继承实体基类
         /// </summary>
         bool IsEntityBase { get; }
 

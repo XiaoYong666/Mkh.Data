@@ -1,6 +1,10 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Data;
+using System.Threading.Tasks;
+using Dapper;
 using Mkh.Data.Abstractions.Descriptors;
 using Mkh.Data.Abstractions.Entities;
+using Mkh.Data.Abstractions.Queryable;
 
 namespace Mkh.Data.Abstractions
 {
@@ -18,6 +22,98 @@ namespace Mkh.Data.Abstractions
         /// 实体描述符
         /// </summary>
         IEntityDescriptor EntityDescriptor { get; }
+
+        /// <summary>
+        /// 执行一个命令并返回受影响的行数
+        /// </summary>
+        /// <param name="sql">sql语句</param>
+        /// <param name="param">参数</param>
+        /// <param name="commandType">命令类型</param>
+        /// <returns></returns>
+        Task<int> Execute(string sql, object param = null, CommandType? commandType = null);
+
+        /// <summary>
+        /// 执行一个命令并返回单个值
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="sql">sql语句</param>
+        /// <param name="param">参数</param>
+        /// <param name="commandType">命令类型</param>
+        /// <returns></returns>
+        Task<T> ExecuteScalar<T>(string sql, object param = null, CommandType? commandType = null);
+
+        /// <summary>
+        /// 执行SQL语句并返回IDataReader
+        /// </summary>
+        /// <param name="sql">sql语句</param>
+        /// <param name="param">参数</param>
+        /// <param name="commandType">命令类型</param>
+        /// <returns></returns>
+        Task<IDataReader> ExecuteReader(string sql, object param = null, CommandType? commandType = null);
+
+        /// <summary>
+        /// 查询第一条数据，不存在返回默认值
+        /// </summary>
+        /// <param name="sql">sql语句</param>
+        /// <param name="param">参数</param>
+        /// <param name="commandType">命令类型</param>
+        /// <returns></returns>
+        Task<dynamic> QueryFirstOrDefault(string sql, object param = null, CommandType? commandType = null);
+
+        /// <summary>
+        /// 查询第一条数据并返回指定类型，不存在返回默认值
+        /// </summary>
+        /// <param name="sql">sql语句</param>
+        /// <param name="param">参数</param>
+        /// <param name="commandType">命令类型</param>
+        /// <returns></returns>
+        Task<T> QueryFirstOrDefault<T>(string sql, object param = null, CommandType? commandType = null);
+
+        /// <summary>
+        /// 查询单条记录，不存在返回默认值，如果存在多条记录则抛出异常
+        /// </summary>
+        /// <param name="sql">sql语句</param>
+        /// <param name="param">参数</param>
+        /// <param name="commandType">命令类型</param>
+        /// <returns></returns>
+        Task<dynamic> QuerySingleOrDefault(string sql, object param = null, CommandType? commandType = null);
+
+        /// <summary>
+        /// 查询单条记录并返回指定类型，不存在返回默认值，如果存在多条记录则抛出异常
+        /// </summary>
+        /// <param name="sql">sql语句</param>
+        /// <param name="param">参数</param>
+        /// <param name="commandType">命令类型</param>
+        /// <returns></returns>
+        Task<T> QuerySingleOrDefault<T>(string sql, object param = null, CommandType? commandType = null);
+
+        /// <summary>
+        /// 查询多条结果
+        /// </summary>
+        /// <param name="sql">sql语句</param>
+        /// <param name="param">参数</param>
+        /// <param name="commandType">命令类型</param>
+        /// <returns></returns>
+        Task<SqlMapper.GridReader> QueryMultiple(string sql, object param = null, CommandType? commandType = null);
+
+        /// <summary>
+        /// 查询结果集，返回动态类型
+        /// </summary>
+        /// <param name="sql">sql语句</param>
+        /// <param name="param">参数</param>
+        /// <param name="commandType">命令类型</param>
+        /// <returns></returns>
+        Task<IEnumerable<dynamic>> Query(string sql, object param = null, CommandType? commandType = null);
+
+
+        /// <summary>
+        /// 查询数据列表并返回指定类型
+        /// </summary>
+        /// <param name="sql">sql语句</param>
+        /// <param name="param">参数</param>
+        /// <param name="commandType">命令类型</param>
+        /// <returns></returns>
+        Task<IEnumerable<T>> Query<T>(string sql, object param = null, CommandType? commandType = null);
     }
 
     /// <summary>
@@ -66,5 +162,12 @@ namespace Mkh.Data.Abstractions
         /// <param name="id"></param>
         /// <returns></returns>
         Task<bool> Exists(dynamic id);
+
+        /// <summary>
+        /// 查询
+        /// </summary>
+        /// <param name="noLock">SqlServer的WITH (NOLOCK)特性，为true时添加，默认：true</param>
+        /// <returns></returns>
+        IQueryable<TEntity> Find(bool noLock = true);
     }
 }

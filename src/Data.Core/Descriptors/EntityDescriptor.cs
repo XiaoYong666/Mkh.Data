@@ -6,10 +6,7 @@ using Mkh.Data.Abstractions;
 using Mkh.Data.Abstractions.Annotations;
 using Mkh.Data.Abstractions.Descriptors;
 using Mkh.Data.Abstractions.Entities;
-using Mkh.Data.Abstractions.Filters;
-using Mkh.Data.Abstractions.Filters.Entity;
-using Mkh.Data.Core.Filters;
-using Mkh.Data.Core.SqlBuild;
+using Mkh.Data.Core.SqlBuilder;
 
 namespace Mkh.Data.Core.Descriptors
 {
@@ -56,11 +53,6 @@ namespace Mkh.Data.Core.Descriptors
         public IEntitySqlDescriptor SqlDescriptor { get; }
 
         /// <summary>
-        /// 操作过滤器引擎
-        /// </summary>
-        public IFilterEngine FilterEngine { get; }
-
-        /// <summary>
         /// 是否使用实体基类
         /// </summary>
         public bool IsEntityBase { get; set; }
@@ -84,18 +76,15 @@ namespace Mkh.Data.Core.Descriptors
             Columns = new List<IColumnDescriptor>();
             DbContext = dbContext;
             EntityType = typeof(TEntity);
-            FilterEngine = new FilterEngine();
             IsEntityBase = EntityType.IsSubclassOfGeneric(typeof(EntityBase<>));
             IsTenant = typeof(ITenant).IsAssignableFrom(EntityType);
             IsSoftDelete = typeof(ISoftDelete).IsAssignableFrom(EntityType) || typeof(ISoftDelete<>).IsAssignableFrom(EntityType);
 
             SetTableName();
 
-            SetActionFilters();
-
             SetColumns();
 
-            SqlDescriptor = EntitySqlBuilder.Build(this);
+            SqlDescriptor = new CrudSqlBuilder(this).Build();
         }
 
         #endregion
@@ -132,39 +121,6 @@ namespace Mkh.Data.Core.Descriptors
             if (DbContext.Adapter.SqlLowerCase)
             {
                 TableName = TableName.ToLower();
-            }
-        }
-
-        /// <summary>
-        /// 设置操作过滤器
-        /// </summary>
-        private void SetActionFilters()
-        {
-            var attributes = EntityType.GetCustomAttributes().ToList();
-            if (attributes.Any())
-            {
-                foreach (var attribute in attributes)
-                {
-                    var type = attribute.GetType();
-                    if (typeof(IFilter).IsImplementType(type))
-                    {
-                        var inter = type.GetInterfaces()[0];
-                        if (typeof(IEntityAddFilter) == inter)
-                        {
-                            FilterEngine.EntityAddFilters.Add((IEntityAddFilter)attribute);
-                            continue;
-                        }
-                        if (typeof(IEntityDeleteFilter) == inter)
-                        {
-                            FilterEngine.EntityDeleteFilters.Add((IEntityDeleteFilter)attribute);
-                            continue;
-                        }
-                        if (typeof(IEntityUpdateFilter) == inter)
-                        {
-                            FilterEngine.EntityUpdateFilters.Add((IEntityUpdateFilter)attribute);
-                        }
-                    }
-                }
             }
         }
 
