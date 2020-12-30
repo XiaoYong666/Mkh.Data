@@ -13,9 +13,10 @@ namespace Mkh.Data.Core.Queryable
 {
     internal class Queryable<TEntity> : QueryableAbstract, IQueryable<TEntity> where TEntity : IEntity, new()
     {
-        public Queryable(IRepository repository, bool noLock) : base(repository)
+        public Queryable(IRepository repository, Expression<Func<TEntity, bool>> expression, bool noLock) : base(repository)
         {
             _queryBody.Joins.Add(new QueryJoin(repository.EntityDescriptor, "T1", JoinType.UnKnown, null, noLock));
+            _queryBody.SetWhere(expression);
         }
 
         #region ==排序==

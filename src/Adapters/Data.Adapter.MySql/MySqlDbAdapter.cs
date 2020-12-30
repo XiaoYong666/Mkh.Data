@@ -43,7 +43,7 @@ namespace Mkh.Data.Adapter.MySql
             var sqlBuilder = new StringBuilder();
             sqlBuilder.AppendFormat("SELECT {0} FROM {1}", select, table);
             if (where.NotNull())
-                sqlBuilder.AppendFormat(" WHERE {0}", where);
+                sqlBuilder.AppendFormat(" {0}", where);
 
             if (groupBy.NotNull())
                 sqlBuilder.Append(groupBy);

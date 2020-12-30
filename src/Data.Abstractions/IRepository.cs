@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Dapper;
 using Mkh.Data.Abstractions.Descriptors;
@@ -166,8 +168,22 @@ namespace Mkh.Data.Abstractions
         /// <summary>
         /// 查询
         /// </summary>
+        /// <returns></returns>
+        IQueryable<TEntity> Find();
+
+        /// <summary>
+        /// 查询
+        /// </summary>
+        /// <param name="expression">过滤条件</param>
+        /// <returns></returns>
+        IQueryable<TEntity> Find(Expression<Func<TEntity, bool>> expression);
+
+        /// <summary>
+        /// 查询
+        /// </summary>
+        /// <param name="expression">过滤条件</param>
         /// <param name="noLock">SqlServer的WITH (NOLOCK)特性，为true时添加，默认：true</param>
         /// <returns></returns>
-        IQueryable<TEntity> Find(bool noLock = true);
+        IQueryable<TEntity> Find(Expression<Func<TEntity, bool>> expression, bool noLock);
     }
 }

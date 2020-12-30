@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using Mkh.Data.Abstractions;
 #if DEBUG
 using System.Runtime.CompilerServices;
 #endif
@@ -32,11 +33,13 @@ namespace Mkh.Data.Core.SqlBuilder
 
         private readonly QueryBody _queryBody;
         private readonly IDbAdapter _dbAdapter;
+        private readonly IDbContext _dbContext;
 
         public QueryableSqlBuilder(QueryBody queryBody)
         {
             _queryBody = queryBody;
-            _dbAdapter = queryBody.Repository.DbContext.Adapter;
+            _dbContext = queryBody.Repository.DbContext;
+            _dbAdapter = _dbContext.Adapter;
         }
 
         /// <summary>
@@ -51,13 +54,31 @@ namespace Mkh.Data.Core.SqlBuilder
             var sqlBuilder = new StringBuilder();
             sqlBuilder.Append("SELECT ");
             ResolveSelect(sqlBuilder);
-            sqlBuilder.Append(" FORM ");
+            sqlBuilder.Append(" FROM ");
             ResolveFrom(sqlBuilder, parameters);
             sqlBuilder.Append(" ");
             ResolveWhere(sqlBuilder, parameters);
             ResolveSort(sqlBuilder);
 
             return sqlBuilder.ToString();
+        }
+
+
+        /// <summary>
+        /// 生成获取第一条记录语句
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        public string BuildFirstSql(out IQueryParameters parameters)
+        {
+            parameters = new QueryParameters();
+
+            var select = ResolveSelect();
+            var from = ResolveFrom(parameters);
+            var where = ResolveWhere(parameters);
+            var sort = ResolveSort();
+
+            return _dbAdapter.GenerateFirstSql(_dbContext.Options.Version, select, from, where, sort);
         }
 
         #region ==解析查询列==
@@ -273,7 +294,7 @@ namespace Mkh.Data.Core.SqlBuilder
 
         #region ==解析表==
 
-        public string ResolveForm(IQueryParameters parameters)
+        public string ResolveFrom(IQueryParameters parameters)
         {
             var sqlBuilder = new StringBuilder();
             ResolveFrom(sqlBuilder, parameters);

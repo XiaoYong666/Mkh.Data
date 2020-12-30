@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Data.Common.Test.Domain.Article;
 using Microsoft.Extensions.DependencyInjection;
 using Mkh.Data.Abstractions.Extensions;
@@ -15,9 +18,16 @@ namespace Data.Adapter.MySql.Test
             _repository = _serviceProvider.GetService<IArticleRepository>();
         }
 
+        private Task ClearTable()
+        {
+            return _repository.Execute("truncate article;");
+        }
+
         [Fact]
         public async void AddTest()
         {
+            await ClearTable();
+
             var article = new ArticleEntity
             {
                 Title = "test",
@@ -133,27 +143,72 @@ namespace Data.Adapter.MySql.Test
             Assert.False(exists);
         }
 
+        private async Task ClearAndAdd(int count = 10)
+        {
+            await ClearTable();
+
+            for (int i = 0; i < count; i++)
+            {
+                var article = new ArticleEntity
+                {
+                    Title = i < count / 2 ? "test" + i : "mkh" + i,
+                    Content = "test"
+                };
+
+                await _repository.Add(article);
+            }
+        }
+
         [Fact]
         public async void ListTest()
         {
+            await ClearAndAdd();
+
             var list = await _repository.Find().List();
 
-            Assert.NotEmpty(list);
+            Assert.Equal(10, list.Count());
         }
 
         [Fact]
         public async void WhereTest()
         {
-            var list = await _repository.Find().Where(m => m.Id > 0).List();
+            await ClearAndAdd();
 
-            Assert.NotEmpty(list);
+            var list = await _repository.Find(m => m.Id > 5).List();
+            Assert.Equal(5, list.Count());
+
+            list = await _repository.Find(m => m.Id == 7).List();
+            Assert.Single(list);
+            Assert.Equal("mkh6", list.First().Title);
+
+            list = await _repository.Find(m => m.Title.Contains("9")).List();
+            Assert.Single(list);
+
+            list = await _repository.Find(m => m.Title.StartsWith("mkh")).List();
+            Assert.Equal(5, list.Count());
+
+            list = await _repository.Find(m => m.Title.EndsWith("9") || m.Title.EndsWith("0")).List();
+            Assert.Equal(2, list.Count());
+        }
+
+        [Fact]
+        public async void FirstTest()
+        {
+            await ClearAndAdd();
+
+            var first = await _repository.Find(m => m.Title == "test3").First();
+
+            Assert.NotNull(first);
+            Assert.Equal(4, first.Id);
         }
 
         [Fact]
         public async void NotContainsTest()
         {
+            await ClearAndAdd();
+
             var ids = new List<int>();
-            var list = await _repository.Find().Where(m => ids.NotContains(m.Id)).List();
+            var list = await _repository.Find(m => ids.NotContains(m.Id)).List();
 
             Assert.NotEmpty(list);
         }

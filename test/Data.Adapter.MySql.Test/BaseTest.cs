@@ -20,6 +20,7 @@ namespace Data.Adapter.MySql.Test
             services.AddLogging(builder =>
             {
                 builder.AddDebug();
+                builder.AddTraceSource("MySql");
             });
 
             //自定义账户信息解析器

@@ -15,10 +15,12 @@ namespace Mkh.Data.Core.Queryable
         protected readonly IRepository _repository;
         protected readonly QueryBody _queryBody;
         protected readonly QueryableSqlBuilder _sqlBuilder;
+        protected readonly IDbLogger _logger;
 
         public QueryableAbstract(IRepository repository)
         {
             _repository = repository;
+            _logger = repository.DbContext.Logger;
             _queryBody = new QueryBody(repository);
             _sqlBuilder = new QueryableSqlBuilder(_queryBody);
         }
@@ -28,12 +30,14 @@ namespace Mkh.Data.Core.Queryable
         public Task<IEnumerable<dynamic>> ListDynamic()
         {
             var sql = _sqlBuilder.BuildListSql(out IQueryParameters parameters);
+            _logger?.Write("ListDynamic", sql);
             return _repository.Query(sql, parameters.ToDynamicParameters());
         }
 
         public Task<IEnumerable<TResult>> List<TResult>()
         {
             var sql = _sqlBuilder.BuildListSql(out IQueryParameters parameters);
+            _logger?.Write("List", sql);
             return _repository.Query<TResult>(sql, parameters.ToDynamicParameters());
         }
 
@@ -76,12 +80,16 @@ namespace Mkh.Data.Core.Queryable
 
         public Task<dynamic> FirstDynamic()
         {
-            throw new NotImplementedException();
+            var sql = _sqlBuilder.BuildFirstSql(out IQueryParameters parameters);
+            _logger?.Write("FirstDynamic", sql);
+            return _repository.QueryFirstOrDefault(sql, parameters.ToDynamicParameters());
         }
 
         public Task<TResult> First<TResult>()
         {
-            throw new NotImplementedException();
+            var sql = _sqlBuilder.BuildFirstSql(out IQueryParameters parameters);
+            _logger?.Write("First", sql);
+            return _repository.QueryFirstOrDefault<TResult>(sql, parameters.ToDynamicParameters());
         }
 
         #endregion
