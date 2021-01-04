@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Threading.Tasks;
 using Mkh.Data.Abstractions;
+using Mkh.Data.Abstractions.Logger;
 using Mkh.Data.Abstractions.Pagination;
 using Mkh.Data.Abstractions.Queryable;
 using Mkh.Data.Core.Queryable.Internal;
 using Mkh.Data.Core.SqlBuilder;
+using IQueryable = Mkh.Data.Abstractions.Queryable.IQueryable;
 
 namespace Mkh.Data.Core.Queryable
 {
@@ -15,7 +18,7 @@ namespace Mkh.Data.Core.Queryable
         protected readonly IRepository _repository;
         protected readonly QueryBody _queryBody;
         protected readonly QueryableSqlBuilder _sqlBuilder;
-        protected readonly IDbLogger _logger;
+        protected readonly DbLogger _logger;
 
         public QueryableAbstract(IRepository repository)
         {
@@ -27,18 +30,16 @@ namespace Mkh.Data.Core.Queryable
 
         #region ==List==
 
-        public Task<IEnumerable<dynamic>> ListDynamic()
+        public Task<IList<dynamic>> ListDynamic()
         {
-            var sql = _sqlBuilder.BuildListSql(out IQueryParameters parameters);
-            _logger?.Write("ListDynamic", sql);
-            return _repository.Query(sql, parameters.ToDynamicParameters());
+            return List<dynamic>();
         }
 
-        public Task<IEnumerable<TResult>> List<TResult>()
+        public async Task<IList<TResult>> List<TResult>()
         {
             var sql = _sqlBuilder.BuildListSql(out IQueryParameters parameters);
-            _logger?.Write("List", sql);
-            return _repository.Query<TResult>(sql, parameters.ToDynamicParameters());
+            _logger.Write("List", sql);
+            return (await _repository.Query<TResult>(sql, parameters.ToDynamicParameters())).ToList();
         }
 
         #endregion
@@ -47,31 +48,48 @@ namespace Mkh.Data.Core.Queryable
 
         public Task<IDataReader> Reader()
         {
-            throw new NotImplementedException();
+            var sql = _sqlBuilder.BuildListSql(out IQueryParameters parameters);
+            _logger.Write("Reader", sql);
+            return _repository.ExecuteReader(sql, parameters.ToDynamicParameters());
         }
 
         #endregion
 
         #region ==Pagination==
 
-        public Task<IEnumerable<dynamic>> PaginationDynamic()
+        public Task<IList<dynamic>> PaginationDynamic()
         {
-            throw new NotImplementedException();
+            return Pagination<dynamic>(null);
         }
 
-        public Task<IEnumerable<dynamic>> PaginationDynamic(Paging paging)
+        public Task<IList<dynamic>> PaginationDynamic(Paging paging)
         {
-            throw new NotImplementedException();
+            return Pagination<dynamic>(paging);
         }
 
-        public Task<IEnumerable<TResult>> Pagination<TResult>()
+        public Task<IList<TResult>> Pagination<TResult>()
         {
-            throw new NotImplementedException();
+            return Pagination<TResult>(null);
         }
 
-        public Task<IEnumerable<TResult>> Pagination<TResult>(Paging paging)
+        public async Task<IList<TResult>> Pagination<TResult>(Paging paging)
         {
-            throw new NotImplementedException();
+            if (paging == null)
+                _queryBody.SetLimit(1, 15);
+            else
+                _queryBody.SetLimit(paging.Skip, paging.Size);
+
+            var sql = _sqlBuilder.BuildPaginationSql(out IQueryParameters parameters);
+            _logger.Write("Pagination", sql);
+
+            var task = _repository.Query<TResult>(sql, parameters.ToDynamicParameters());
+
+            if (paging != null && paging.QueryCount)
+            {
+                paging.TotalCount = await Count();
+            }
+
+            return (await task).ToList();
         }
 
         #endregion
@@ -80,15 +98,13 @@ namespace Mkh.Data.Core.Queryable
 
         public Task<dynamic> FirstDynamic()
         {
-            var sql = _sqlBuilder.BuildFirstSql(out IQueryParameters parameters);
-            _logger?.Write("FirstDynamic", sql);
-            return _repository.QueryFirstOrDefault(sql, parameters.ToDynamicParameters());
+            return First<dynamic>();
         }
 
         public Task<TResult> First<TResult>()
         {
             var sql = _sqlBuilder.BuildFirstSql(out IQueryParameters parameters);
-            _logger?.Write("First", sql);
+            _logger.Write("First", sql);
             return _repository.QueryFirstOrDefault<TResult>(sql, parameters.ToDynamicParameters());
         }
 
@@ -98,16 +114,20 @@ namespace Mkh.Data.Core.Queryable
 
         public Task<long> Count()
         {
-            throw new NotImplementedException();
+            var sql = _sqlBuilder.BuildCountSql(out IQueryParameters parameters);
+            _logger.Write("Count", sql);
+            return _repository.ExecuteScalar<long>(sql, parameters.ToDynamicParameters());
         }
 
         #endregion
 
         #region ==Exists==
 
-        public Task<bool> Exists()
+        public async Task<bool> Exists()
         {
-            throw new NotImplementedException();
+            var sql = _sqlBuilder.BuildExistsSql(out IQueryParameters parameters);
+            _logger.Write("Exists", sql);
+            return await _repository.ExecuteScalar<int>(sql, parameters.ToDynamicParameters()) > 0;
         }
 
         #endregion

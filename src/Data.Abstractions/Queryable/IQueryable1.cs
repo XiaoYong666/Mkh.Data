@@ -395,7 +395,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// 查询列表，返回指定类型
         /// </summary>
         /// <returns></returns>
-        Task<IEnumerable<TEntity>> List();
+        Task<IList<TEntity>> List();
 
         #endregion
 
@@ -405,14 +405,14 @@ namespace Mkh.Data.Abstractions.Queryable
         /// 分页查询，返回实体类型
         /// </summary>
         /// <returns></returns>
-        Task<IEnumerable<TEntity>> Pagination();
+        Task<IList<TEntity>> Pagination();
 
         /// <summary>
         /// 分页查询，返回实体类型
         /// </summary>
         /// <param name="paging">分页对象</param>
         /// <returns></returns>
-        Task<IEnumerable<TEntity>> Pagination(Paging paging);
+        Task<IList<TEntity>> Pagination(Paging paging);
 
         #endregion
 

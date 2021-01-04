@@ -26,7 +26,7 @@ namespace Mkh.Data.Core.Repository
 
             var sql = _sql.GetSoftDeleteSingle(tableName);
 
-            _logger?.Write("SoftDelete", sql);
+            _logger.Write("SoftDelete", sql);
 
             return await Execute(sql, dynParams) > 0;
         }

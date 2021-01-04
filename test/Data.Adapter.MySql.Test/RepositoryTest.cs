@@ -1,11 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Data.Common.Test.Domain.Article;
 using Microsoft.Extensions.DependencyInjection;
 using Mkh.Data.Abstractions.Extensions;
+using Mkh.Data.Abstractions.Pagination;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Data.Adapter.MySql.Test
 {
@@ -13,7 +14,7 @@ namespace Data.Adapter.MySql.Test
     {
         private readonly IArticleRepository _repository;
 
-        public RepositoryTest()
+        public RepositoryTest(ITestOutputHelper output) : base(output)
         {
             _repository = _serviceProvider.GetService<IArticleRepository>();
         }
@@ -141,13 +142,19 @@ namespace Data.Adapter.MySql.Test
 
             exists = await _repository.Exists(100000);
             Assert.False(exists);
+
+            exists = await _repository.Find(m => m.Id == 1).Exists();
+            Assert.True(exists);
+
+            exists = await _repository.Find(m => m.Id == 1000).Exists();
+            Assert.False(exists);
         }
 
         private async Task ClearAndAdd(int count = 10)
         {
             await ClearTable();
 
-            for (int i = 0; i < count; i++)
+            for (int i = 1; i <= count; i++)
             {
                 var article = new ArticleEntity
                 {
@@ -166,29 +173,51 @@ namespace Data.Adapter.MySql.Test
 
             var list = await _repository.Find().List();
 
-            Assert.Equal(10, list.Count());
-        }
+            Assert.Equal(10, list.Count);
 
-        [Fact]
-        public async void WhereTest()
-        {
-            await ClearAndAdd();
-
-            var list = await _repository.Find(m => m.Id > 5).List();
-            Assert.Equal(5, list.Count());
+            list = await _repository.Find(m => m.Id > 5).List();
+            Assert.Equal("mkh10", list[4].Title);
 
             list = await _repository.Find(m => m.Id == 7).List();
             Assert.Single(list);
-            Assert.Equal("mkh6", list.First().Title);
+            Assert.Equal("mkh7", list.First().Title);
 
             list = await _repository.Find(m => m.Title.Contains("9")).List();
             Assert.Single(list);
 
             list = await _repository.Find(m => m.Title.StartsWith("mkh")).List();
-            Assert.Equal(5, list.Count());
+            Assert.Equal(6, list.Count);
 
-            list = await _repository.Find(m => m.Title.EndsWith("9") || m.Title.EndsWith("0")).List();
-            Assert.Equal(2, list.Count());
+            list = await _repository.Find(m => m.Title.EndsWith("9") || m.Title.EndsWith("1")).List();
+            Assert.Equal(2, list.Count);
+
+            var ids = new List<int> { 3, 5, 9 };
+            list = await _repository.Find(m => ids.Contains(m.Id)).List();
+            Assert.Equal(3, list.Count);
+            Assert.Equal("mkh5", list[1].Title);
+
+            list = await _repository.Find(m => ids.NotContains(m.Id)).List();
+            Assert.Equal(7, list.Count);
+            Assert.Equal("test1", list[0].Title);
+        }
+
+        [Fact]
+        public async void PaginationTest()
+        {
+            await ClearAndAdd(20);
+
+            var list = await _repository.Find().Pagination();
+
+            Assert.Equal(15, list.Count);
+
+            var paging = new Paging(2, 10);
+            list = await _repository.Find().Pagination(paging);
+
+            Assert.Equal(20, paging.TotalCount);
+            Assert.Equal("mkh11", list[0].Title);
+
+            list = await _repository.Find(m => m.Id > 5).Pagination(new Paging(2, 3));
+            Assert.Equal("test9", list[0].Title);
         }
 
         [Fact]
@@ -199,7 +228,7 @@ namespace Data.Adapter.MySql.Test
             var first = await _repository.Find(m => m.Title == "test3").First();
 
             Assert.NotNull(first);
-            Assert.Equal(4, first.Id);
+            Assert.Equal(3, first.Id);
         }
 
         [Fact]

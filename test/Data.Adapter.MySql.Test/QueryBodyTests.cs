@@ -6,11 +6,16 @@ using Data.Common.Test.Domain.Category;
 using Microsoft.Extensions.DependencyInjection;
 using Mkh.Data.Core.Queryable.Internal;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Data.Adapter.MySql.Test
 {
     public class QueryBodyTests : DbContextTests
     {
+        public QueryBodyTests(ITestOutputHelper output) : base(output)
+        {
+        }
+
         [Fact]
         public void GetColumnNameTest()
         {

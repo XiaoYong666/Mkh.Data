@@ -1,10 +1,15 @@
 ﻿using System.Data;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Data.Adapter.MySql.Test
 {
     public class DbContextTests : BaseTest
     {
+        public DbContextTests(ITestOutputHelper output) : base(output)
+        {
+        }
+
         /// <summary>
         /// 数据库上下文状态测试
         /// </summary>

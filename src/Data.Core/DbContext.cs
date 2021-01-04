@@ -4,6 +4,7 @@ using System.Data;
 using Mkh.Data.Abstractions;
 using Mkh.Data.Abstractions.Adapter;
 using Mkh.Data.Abstractions.Descriptors;
+using Mkh.Data.Abstractions.Logger;
 
 namespace Mkh.Data.Core
 {
@@ -15,7 +16,7 @@ namespace Mkh.Data.Core
 
         public DbOptions Options { get; internal set; }
 
-        public IDbLogger Logger { get; internal set; }
+        public DbLogger Logger { get; internal set; }
 
         public IDbAdapter Adapter { get; internal set; }
 

@@ -18,7 +18,7 @@ namespace Mkh.Data.Core.Repository
             var dynParams = GetIdParameter(id);
             var sql = _sql.GetExists(tableName);
 
-            _logger?.Write("Exists", sql);
+            _logger.Write("Exists", sql);
             return await QuerySingleOrDefault<int>(sql, dynParams) > 0;
         }
 

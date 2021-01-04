@@ -17,8 +17,11 @@ namespace Data.Common.Test.Domain.Category
         public string Name { get; set; }
 
         public bool Deleted { get; set; }
+
         public Guid? DeletedBy { get; set; }
+
         public string Deleter { get; set; }
+
         public DateTime DeletedTime { get; set; }
     }
 }

@@ -54,7 +54,11 @@ namespace Mkh.Data.Adapter.MySql
             if (sort.NotNull())
                 sqlBuilder.AppendFormat(" ORDER BY {0}", sort);
 
-            sqlBuilder.AppendFormat(" LIMIT {0},{1}", skip, take);
+            if (skip == 0)
+                sqlBuilder.AppendFormat(" LIMIT {0}", take);
+            else
+                sqlBuilder.AppendFormat(" LIMIT {0},{1}", skip, take);
+
             return sqlBuilder.ToString();
         }
 

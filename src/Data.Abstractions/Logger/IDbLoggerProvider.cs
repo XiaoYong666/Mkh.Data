@@ -1,9 +1,9 @@
-﻿namespace Mkh.Data.Abstractions
+﻿namespace Mkh.Data.Abstractions.Logger
 {
     /// <summary>
-    /// 数据库日志记录器
+    /// 数据库日志提供器
     /// </summary>
-    public interface IDbLogger
+    public interface IDbLoggerProvider
     {
         /// <summary>
         /// 日志记录

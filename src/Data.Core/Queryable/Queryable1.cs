@@ -331,7 +331,7 @@ namespace Mkh.Data.Core.Queryable
 
         #region ==列表==
 
-        public Task<IEnumerable<TEntity>> List()
+        public Task<IList<TEntity>> List()
         {
             return List<TEntity>();
         }
@@ -340,12 +340,12 @@ namespace Mkh.Data.Core.Queryable
 
         #region ==分页==
 
-        public Task<IEnumerable<TEntity>> Pagination()
+        public Task<IList<TEntity>> Pagination()
         {
             return Pagination<TEntity>();
         }
 
-        public Task<IEnumerable<TEntity>> Pagination(Paging paging)
+        public Task<IList<TEntity>> Pagination(Paging paging)
         {
             return Pagination<TEntity>(paging);
         }

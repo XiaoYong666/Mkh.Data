@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using Mkh.Data.Abstractions.Adapter;
 using Mkh.Data.Abstractions.Descriptors;
+using Mkh.Data.Abstractions.Logger;
 
 namespace Mkh.Data.Abstractions
 {
@@ -26,7 +27,7 @@ namespace Mkh.Data.Abstractions
         /// <summary>
         /// 日志记录器
         /// </summary>
-        IDbLogger Logger { get; }
+        DbLogger Logger { get; }
 
         /// <summary>
         /// 数据库适配器

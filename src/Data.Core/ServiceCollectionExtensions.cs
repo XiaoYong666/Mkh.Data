@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Mkh.Data.Abstractions;
 using Mkh.Data.Abstractions.Adapter;
+using Mkh.Data.Abstractions.Logger;
 using Mkh.Data.Core;
 using Mkh.Data.Core.Internal;
 
@@ -27,7 +28,7 @@ namespace Microsoft.Extensions.DependencyInjection
             //尝试添加默认账户信息解析器
             services.TryAddSingleton<IAccountResolver, DefaultAccountResolver>();
             //尝试添加默认的数据库操作日志记录器
-            services.TryAddSingleton<IDbLogger, DbLogger>();
+            services.TryAddSingleton<IDbLoggerProvider, DbLoggerProvider>();
 
             var sp = services.BuildServiceProvider();
 
@@ -36,7 +37,7 @@ namespace Microsoft.Extensions.DependencyInjection
             var dbContext = (TDbContext)Activator.CreateInstance(dbContextType);
             dbContextType.GetProperty("Services")?.SetValue(dbContext, sp);
             dbContextType.GetProperty("Options")?.SetValue(dbContext, options);
-            dbContextType.GetProperty("Logger")?.SetValue(dbContext, sp.GetService<IDbLogger>());
+            dbContextType.GetProperty("Logger")?.SetValue(dbContext, new DbLogger(options, sp.GetService<IDbLoggerProvider>()));
             dbContextType.GetProperty("Adapter")?.SetValue(dbContext, dbAdapter);
             dbContextType.GetProperty("AccountResolver")?.SetValue(dbContext, sp.GetService<IAccountResolver>());
 

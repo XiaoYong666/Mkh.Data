@@ -16,14 +16,14 @@ namespace Mkh.Data.Abstractions.Queryable
         /// 查询列表，返回Dynamic类型
         /// </summary>
         /// <returns></returns>
-        Task<IEnumerable<dynamic>> ListDynamic();
+        Task<IList<dynamic>> ListDynamic();
 
         /// <summary>
         /// 查询列表，返回指定类型
         /// </summary>
         /// <typeparam name="TResult"></typeparam>
         /// <returns></returns>
-        Task<IEnumerable<TResult>> List<TResult>();
+        Task<IList<TResult>> List<TResult>();
 
         #endregion
 
@@ -43,27 +43,27 @@ namespace Mkh.Data.Abstractions.Queryable
         /// 分页查询，返回Dynamic类型
         /// </summary>
         /// <returns></returns>
-        Task<IEnumerable<dynamic>> PaginationDynamic();
+        Task<IList<dynamic>> PaginationDynamic();
 
         /// <summary>
         /// 分页查询，返回Dynamic类型
         /// </summary>
         /// <param name="paging">分页对象</param>
         /// <returns></returns>
-        Task<IEnumerable<dynamic>> PaginationDynamic(Paging paging);
+        Task<IList<dynamic>> PaginationDynamic(Paging paging);
 
         /// <summary>
         /// 分页查询，返回指定类型
         /// </summary>
         /// <returns></returns>
-        Task<IEnumerable<TResult>> Pagination<TResult>();
+        Task<IList<TResult>> Pagination<TResult>();
 
         /// <summary>
         /// 分页查询，返回指定类型
         /// </summary>
         /// <param name="paging">分页对象</param>
         /// <returns></returns>
-        Task<IEnumerable<TResult>> Pagination<TResult>(Paging paging);
+        Task<IList<TResult>> Pagination<TResult>(Paging paging);
 
         #endregion
 

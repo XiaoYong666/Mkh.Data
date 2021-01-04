@@ -30,7 +30,7 @@ namespace Mkh.Data.Core.Repository
 
             SetCreateInfo(entity);
 
-            _logger?.Write("Add", sql);
+            _logger.Write("Add", sql);
 
             var primaryKey = EntityDescriptor.PrimaryKey;
             if (primaryKey.IsInt)
@@ -42,7 +42,7 @@ namespace Mkh.Data.Core.Repository
                 {
                     primaryKey.PropertyInfo.SetValue(entity, id);
 
-                    _logger?.Write("NewID", id.ToString());
+                    _logger.Write("NewID", id.ToString());
                     return;
                 }
             }
@@ -56,7 +56,7 @@ namespace Mkh.Data.Core.Repository
                 {
                     primaryKey.PropertyInfo.SetValue(entity, id);
 
-                    _logger?.Write("NewID", id.ToString());
+                    _logger.Write("NewID", id.ToString());
                     return;
                 }
             }
@@ -67,7 +67,7 @@ namespace Mkh.Data.Core.Repository
                 if (id == Guid.Empty)
                     primaryKey.PropertyInfo.SetValue(entity, Guid.NewGuid());
 
-                _logger?.Write("NewID", id.ToString());
+                _logger.Write("NewID", id.ToString());
 
                 if (await Execute(sql, entity) > 0)
                 {

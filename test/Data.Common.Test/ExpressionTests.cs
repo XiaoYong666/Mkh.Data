@@ -20,7 +20,7 @@ namespace Data.Common.Test
             Expression<Func<ArticleEntity, object>> exp4 = m => new { Title = m.Title.Substring(10) };
 
             Assert.Equal(ExpressionType.MemberAccess, exp.Body.NodeType);
-            Assert.Equal(ExpressionType.Convert, exp1.Body.NodeType);
+            Assert.Equal(ExpressionType.MemberAccess, exp1.Body.NodeType);
             Assert.Equal(ExpressionType.New, exp2.Body.NodeType);
             Assert.Equal(ExpressionType.New, exp3.Body.NodeType);
             Assert.Equal(ExpressionType.New, exp4.Body.NodeType);

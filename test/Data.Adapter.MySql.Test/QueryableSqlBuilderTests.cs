@@ -6,15 +6,21 @@ using System.Text;
 using Data.Common.Test.Domain.Article;
 using Data.Common.Test.Domain.Category;
 using Microsoft.Extensions.DependencyInjection;
+using Mkh.Data.Abstractions.Extensions;
 using Mkh.Data.Abstractions.Pagination;
 using Mkh.Data.Core.Queryable.Internal;
 using Mkh.Data.Core.SqlBuilder;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Data.Adapter.MySql.Test
 {
     public class QueryableSqlBuilderTests : DbContextTests
     {
+        public QueryableSqlBuilderTests(ITestOutputHelper output) : base(output)
+        {
+        }
+
         internal QueryableSqlBuilder CreateBuilder()
         {
             var queryBody = new QueryBody(_serviceProvider.GetService<IArticleRepository>());
@@ -251,7 +257,7 @@ namespace Data.Adapter.MySql.Test
             builder.QueryBody.SetSelect(exp5);
             sql = builder.ResolveSelect();
 
-            Assert.Equal("T1.`Title` AS `Title`,T2.`Id` AS `Id`,T2.`Name` AS `Name`,T2.`CreatedBy` AS `CreatedBy`,T2.`Creator` AS `Creator`,T2.`CreatedTime` AS `CreatedTime`,T2.`ModifiedBy` AS `ModifiedBy`,T2.`Modifier` AS `Modifier`,T2.`ModifiedTime` AS `ModifiedTime`", sql);
+            Assert.Equal("T1.`Title` AS `Title`,T2.`Id` AS `Id`,T2.`Name` AS `Name`,T2.`Deleted` AS `Deleted`,T2.`DeletedBy` AS `DeletedBy`,T2.`Deleter` AS `Deleter`,T2.`DeletedTime` AS `DeletedTime`,T2.`CreatedBy` AS `CreatedBy`,T2.`Creator` AS `Creator`,T2.`CreatedTime` AS `CreatedTime`,T2.`ModifiedBy` AS `ModifiedBy`,T2.`Modifier` AS `Modifier`,T2.`ModifiedTime` AS `ModifiedTime`", sql);
 
             Expression<Func<ArticleEntity, CategoryEntity, dynamic>> exp6 = (m, n) => new { m.Title, Name = n.Name.Substring(3, 2) };
 
@@ -268,7 +274,7 @@ namespace Data.Adapter.MySql.Test
             builder.QueryBody.SetSelectExclude(exp8);
             sql = builder.ResolveSelect();
 
-            Assert.Equal("T1.`Id` AS `Id`,T2.`Id` AS `Id`,T2.`CreatedBy` AS `CreatedBy`,T2.`Creator` AS `Creator`,T2.`CreatedTime` AS `CreatedTime`,T2.`ModifiedBy` AS `ModifiedBy`,T2.`Modifier` AS `Modifier`,T2.`ModifiedTime` AS `ModifiedTime`", sql);
+            Assert.Equal("T1.`Id` AS `Id`,T2.`Id` AS `Id`,T2.`Deleted` AS `Deleted`,T2.`DeletedBy` AS `DeletedBy`,T2.`Deleter` AS `Deleter`,T2.`DeletedTime` AS `DeletedTime`,T2.`CreatedBy` AS `CreatedBy`,T2.`Creator` AS `Creator`,T2.`CreatedTime` AS `CreatedTime`,T2.`ModifiedBy` AS `ModifiedBy`,T2.`Modifier` AS `Modifier`,T2.`ModifiedTime` AS `ModifiedTime`", sql);
         }
 
         #endregion
@@ -666,7 +672,7 @@ namespace Data.Adapter.MySql.Test
         }
 
         /// <summary>
-        /// 解析数组类型的Contains函数
+        /// 解析字符串类型的Contains函数
         /// </summary>
         [Fact]
         public void ResolveExpressionTest15()
@@ -741,6 +747,47 @@ namespace Data.Adapter.MySql.Test
             Assert.Equal("mkh", parameters[0].Value);
         }
 
+        /// <summary>
+        /// 解析数组类型的NotContains函数
+        /// </summary>
+        [Fact]
+        public void ResolveExpressionTest19()
+        {
+            var builder = CreateBuilder();
+
+            var ids = new[] { 10, 15 };
+
+            Expression<Func<ArticleEntity, bool>> exp = m => ids.NotContains(m.Id);
+
+            var parameters = new QueryParameters();
+            var sqlBuilder = new StringBuilder();
+            builder.ResolveExpression(exp.Body, exp, sqlBuilder, parameters);
+            var sql = sqlBuilder.ToString();
+
+            Assert.Equal("`Id` NOT IN (10,15)", sql);
+        }
+
+        /// <summary>
+        /// 解析集合类型的NotContains函数
+        /// </summary>
+        [Fact]
+        public void ResolveExpressionTest20()
+        {
+            var builder = CreateBuilder();
+
+            var ids = new List<int> { 10, 15 };
+
+            Expression<Func<ArticleEntity, bool>> exp = m => ids.NotContains(m.Id);
+
+            var parameters = new QueryParameters();
+            var sqlBuilder = new StringBuilder();
+            builder.ResolveExpression(exp.Body, exp, sqlBuilder, parameters);
+            var sql = sqlBuilder.ToString();
+
+            Assert.Equal("`Id` NOT IN (10,15)", sql);
+        }
+
         #endregion
+
     }
 }

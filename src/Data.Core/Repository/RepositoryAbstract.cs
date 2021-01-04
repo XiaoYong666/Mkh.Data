@@ -8,6 +8,7 @@ using Mkh.Data.Abstractions;
 using Mkh.Data.Abstractions.Adapter;
 using Mkh.Data.Abstractions.Descriptors;
 using Mkh.Data.Abstractions.Entities;
+using Mkh.Data.Abstractions.Logger;
 using Mkh.Data.Core.Descriptors;
 
 namespace Mkh.Data.Core.Repository
@@ -18,7 +19,7 @@ namespace Mkh.Data.Core.Repository
 
         private IEntitySqlDescriptor _sql;
         private IDbAdapter _adapter;
-        private IDbLogger _logger;
+        private DbLogger _logger;
 
         #endregion
 

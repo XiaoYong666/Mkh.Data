@@ -29,7 +29,7 @@ namespace Mkh.Data.Core.Repository
             else
                 sql = _sql.GetGet(tableName);
 
-            _logger?.Write("Get", sql);
+            _logger.Write("Get", sql);
             return QuerySingleOrDefault<TEntity>(sql, dynParams);
         }
     }

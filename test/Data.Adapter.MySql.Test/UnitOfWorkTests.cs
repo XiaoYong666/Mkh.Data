@@ -1,11 +1,16 @@
 ﻿using Data.Common.Test.Domain.Article;
 using Data.Common.Test.Domain.Category;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Data.Adapter.MySql.Test
 {
     public class UnitOfWorkTests : BaseTest
     {
+        public UnitOfWorkTests(ITestOutputHelper output) : base(output)
+        {
+        }
+
         [Fact]
         public async void SaveChangesTest()
         {
