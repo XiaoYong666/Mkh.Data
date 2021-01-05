@@ -103,34 +103,6 @@ namespace Mkh.Data.Abstractions.Queryable
 
         #endregion
 
-        #region ==Function==
-
-        /// <summary>
-        /// 获取最大值
-        /// </summary>
-        /// <returns></returns>
-        Task<TResult> Max<TResult>();
-
-        /// <summary>
-        /// 获取最小值
-        /// </summary>
-        /// <returns></returns>
-        Task<TResult> Min<TResult>();
-
-        /// <summary>
-        /// 求和
-        /// </summary>
-        /// <returns></returns>
-        Task<TResult> Sum<TResult>();
-
-        /// <summary>
-        /// 求平均值
-        /// </summary>
-        /// <returns></returns>
-        Task<TResult> Avg<TResult>();
-
-        #endregion
-
         #region ==Delete==
 
         /// <summary>

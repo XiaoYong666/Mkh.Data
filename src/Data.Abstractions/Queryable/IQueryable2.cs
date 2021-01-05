@@ -140,7 +140,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <param name="whereSql"></param>
         /// <returns></returns>
         IQueryable<TEntity, TEntity2> WhereNotNull(object condition, string whereSql);
-        
+
         /// <summary>
         /// GUID不为空的时候添加过滤条件
         /// </summary>
@@ -392,6 +392,34 @@ namespace Mkh.Data.Abstractions.Queryable
         /// </summary>
         /// <returns></returns>
         IQueryable<TEntity, TEntity2> NotFilterTenant();
+
+        #endregion
+
+        #region ==Function==
+
+        /// <summary>
+        /// 获取最大值
+        /// </summary>
+        /// <returns></returns>
+        Task<TResult> Max<TResult>(Expression<Func<TEntity, TEntity2, TResult>> expression);
+
+        /// <summary>
+        /// 获取最小值
+        /// </summary>
+        /// <returns></returns>
+        Task<TResult> Min<TResult>(Expression<Func<TEntity, TEntity2, TResult>> expression);
+
+        /// <summary>
+        /// 求和
+        /// </summary>
+        /// <returns></returns>
+        Task<TResult> Sum<TResult>(Expression<Func<TEntity, TEntity2, TResult>> expression);
+
+        /// <summary>
+        /// 求平均值
+        /// </summary>
+        /// <returns></returns>
+        Task<TResult> Avg<TResult>(Expression<Func<TEntity, TEntity2, TResult>> expression);
 
         #endregion
 

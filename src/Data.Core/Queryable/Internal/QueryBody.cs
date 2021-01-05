@@ -189,6 +189,21 @@ namespace Mkh.Data.Core.Queryable.Internal
         }
 
         /// <summary>
+        /// 设置函数选择列
+        /// </summary>
+        /// <param name="functionExpression">函数表达式</param>
+        /// <param name="functionName">函数名称</param>
+        public void SetFunctionSelect(LambdaExpression functionExpression, string functionName)
+        {
+            if (functionExpression != null && functionName != null)
+            {
+                Select.Mode = QuerySelectMode.Function;
+                Select.FunctionExpression = functionExpression;
+                Select.FunctionName = functionName;
+            }
+        }
+
+        /// <summary>
         /// 设置排除列
         /// </summary>
         /// <param name="excludeExpression"></param>

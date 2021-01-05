@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Data.Common.Test.Domain.Article;
+using Data.Common.Test.Domain.Category;
 using Microsoft.Extensions.DependencyInjection;
 using Mkh.Data.Abstractions.Extensions;
 using Mkh.Data.Abstractions.Pagination;
@@ -239,7 +240,33 @@ namespace Data.Adapter.MySql.Test
             var ids = new List<int>();
             var list = await _repository.Find(m => ids.NotContains(m.Id)).List();
 
-            Assert.NotEmpty(list);
+            Assert.Equal(10, list.Count);
+        }
+
+        [Fact]
+        public async void FunctionTest()
+        {
+            await ClearAndAdd();
+
+            var maxId = await _repository.Find().Max(m => m.Id);
+
+            Assert.Equal(10, maxId);
+
+            maxId = await _repository.Find(m => m.Id < 8).Max(m => m.Id);
+
+            Assert.Equal(7, maxId);
+
+            var minId = await _repository.Find(m => m.Id > 5).Min(m => m.Id);
+
+            Assert.Equal(6, minId);
+
+            var avg = await _repository.Find(m => m.Id > 5 && m.Id < 10).Avg<decimal>(m => m.Id);
+
+            Assert.Equal(7.5M, avg);
+
+            var sum = await _repository.Find(m => m.Id > 5 && m.Id < 10).Sum(m => m.Id);
+
+            Assert.Equal(30, sum);
         }
     }
 }

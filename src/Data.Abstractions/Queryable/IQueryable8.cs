@@ -186,7 +186,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <param name="key">列</param>
         /// <param name="queryable">子查询的查询构造器</param>
         /// <returns></returns>
-        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8>  SubQueryEqual<TKey>(Expression<Func<TEntity, TKey>> key, IQueryable queryable);
+        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8> SubQueryEqual<TKey>(Expression<Func<TEntity, TKey>> key, IQueryable queryable);
 
         /// <summary>
         /// 子查询不等于
@@ -195,7 +195,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <param name="key">列</param>
         /// <param name="queryable">子查询的查询构造器</param>
         /// <returns></returns>
-        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8>  SubQueryNotEqual<TKey>(Expression<Func<TEntity, TKey>> key, IQueryable queryable);
+        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8> SubQueryNotEqual<TKey>(Expression<Func<TEntity, TKey>> key, IQueryable queryable);
 
         /// <summary>
         /// 子查询大于
@@ -204,7 +204,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <param name="key">列</param>
         /// <param name="queryable">子查询的查询构造器</param>
         /// <returns></returns>
-        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8>  SubQueryGreaterThan<TKey>(Expression<Func<TEntity, TKey>> key, IQueryable queryable);
+        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8> SubQueryGreaterThan<TKey>(Expression<Func<TEntity, TKey>> key, IQueryable queryable);
 
         /// <summary>
         /// 子查询大于等于
@@ -213,7 +213,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <param name="key">列</param>
         /// <param name="queryable">子查询的查询构造器</param>
         /// <returns></returns>
-        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8>  SubQueryGreaterThanOrEqual<TKey>(Expression<Func<TEntity, TKey>> key, IQueryable queryable);
+        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8> SubQueryGreaterThanOrEqual<TKey>(Expression<Func<TEntity, TKey>> key, IQueryable queryable);
 
         /// <summary>
         /// 子查询小于
@@ -222,7 +222,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <param name="key">列</param>
         /// <param name="queryable">子查询的查询构造器</param>
         /// <returns></returns>
-        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8>  SubQueryLessThan<TKey>(Expression<Func<TEntity, TKey>> key, IQueryable queryable);
+        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8> SubQueryLessThan<TKey>(Expression<Func<TEntity, TKey>> key, IQueryable queryable);
 
         /// <summary>
         /// 子查询小于等于
@@ -231,7 +231,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <param name="key">列</param>
         /// <param name="queryable">子查询的查询构造器</param>
         /// <returns></returns>
-        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8>  SubQueryLessThanOrEqual<TKey>(Expression<Func<TEntity, TKey>> key, IQueryable queryable);
+        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8> SubQueryLessThanOrEqual<TKey>(Expression<Func<TEntity, TKey>> key, IQueryable queryable);
 
         /// <summary>
         /// 子查询包含
@@ -240,7 +240,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <param name="key">列</param>
         /// <param name="queryable">子查询的查询构造器</param>
         /// <returns></returns>
-        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8>  SubQueryIn<TKey>(Expression<Func<TEntity, TKey>> key, IQueryable queryable);
+        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8> SubQueryIn<TKey>(Expression<Func<TEntity, TKey>> key, IQueryable queryable);
 
         /// <summary>
         /// 子查询不包含
@@ -249,7 +249,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <param name="key">列</param>
         /// <param name="queryable">子查询的查询构造器</param>
         /// <returns></returns>
-        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8>  SubQueryNotIn<TKey>(Expression<Func<TEntity, TKey>> key, IQueryable queryable);
+        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8> SubQueryNotIn<TKey>(Expression<Func<TEntity, TKey>> key, IQueryable queryable);
 
         #endregion
 
@@ -401,6 +401,34 @@ namespace Mkh.Data.Abstractions.Queryable
         /// </summary>
         /// <returns></returns>
         IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8> NotFilterTenant();
+
+        #endregion
+
+        #region ==Function==
+
+        /// <summary>
+        /// 获取最大值
+        /// </summary>
+        /// <returns></returns>
+        Task<TResult> Max<TResult>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TResult>> expression);
+
+        /// <summary>
+        /// 获取最小值
+        /// </summary>
+        /// <returns></returns>
+        Task<TResult> Min<TResult>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TResult>> expression);
+
+        /// <summary>
+        /// 求和
+        /// </summary>
+        /// <returns></returns>
+        Task<TResult> Sum<TResult>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TResult>> expression);
+
+        /// <summary>
+        /// 求平均值
+        /// </summary>
+        /// <returns></returns>
+        Task<TResult> Avg<TResult>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TResult>> expression);
 
         #endregion
 

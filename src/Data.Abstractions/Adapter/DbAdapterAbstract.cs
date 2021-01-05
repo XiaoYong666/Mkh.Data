@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿using System;
+using System.Data;
 using System.Linq.Expressions;
 using System.Text;
 using Mkh.Data.Abstractions.Descriptors;
@@ -60,8 +61,6 @@ namespace Mkh.Data.Abstractions.Adapter
 
         public abstract void ResolveColumn(IColumnDescriptor columnDescriptor);
 
-        public abstract string Method2Func(MethodCallExpression methodCallExpression, string columnName);
-
-        public abstract string Property2Func(string propertyName, string columnName);
+        public abstract string FunctionMapper(string sourceName, string columnName, Type dataType = null, object arg0 = null, object arg1 = null);
     }
 }

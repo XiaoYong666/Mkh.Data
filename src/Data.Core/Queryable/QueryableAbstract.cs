@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Mkh.Data.Abstractions;
 using Mkh.Data.Abstractions.Logger;
@@ -132,30 +133,6 @@ namespace Mkh.Data.Core.Queryable
 
         #endregion
 
-        #region ==Function==
-
-        public Task<TResult> Max<TResult>()
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<TResult> Min<TResult>()
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<TResult> Sum<TResult>()
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<TResult> Avg<TResult>()
-        {
-            throw new NotImplementedException();
-        }
-
-        #endregion
-
         #region ==Delete==
 
         public Task<bool> Delete()
@@ -180,6 +157,38 @@ namespace Mkh.Data.Core.Queryable
         public Task<int> SoftDeleteWithAffectedNum()
         {
             throw new NotImplementedException();
+        }
+
+        #endregion
+
+        #region ==Function==
+
+        protected Task<TResult> Max<TResult>(LambdaExpression expression)
+        {
+            return ExecuteFunction<TResult>("Max", expression);
+        }
+
+        protected Task<TResult> Min<TResult>(LambdaExpression expression)
+        {
+            return ExecuteFunction<TResult>("Min", expression);
+        }
+
+        protected Task<TResult> Sum<TResult>(LambdaExpression expression)
+        {
+            return ExecuteFunction<TResult>("Sum", expression);
+        }
+
+        protected Task<TResult> Avg<TResult>(LambdaExpression expression)
+        {
+            return ExecuteFunction<TResult>("Avg", expression);
+        }
+
+        private Task<TResult> ExecuteFunction<TResult>(string functionName, LambdaExpression expression)
+        {
+            _queryBody.SetFunctionSelect(expression, functionName);
+            var sql = _sqlBuilder.BuildFunctionSql(out IQueryParameters parameters);
+            _logger.Write(functionName, sql);
+            return _repository.ExecuteScalar<TResult>(sql, parameters.ToDynamicParameters());
         }
 
         #endregion

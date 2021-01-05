@@ -202,79 +202,67 @@ namespace Mkh.Data.Adapter.MySql
             }
         }
 
-        public override string Method2Func(MethodCallExpression methodCallExpression, string columnName)
+        #region ==函数映射==
+
+        public override string FunctionMapper(string sourceName, string columnName, Type dataType = null, object arg0 = null, object arg1 = null)
         {
-            var methodName = methodCallExpression.Method.Name;
-            if (methodName == "Substring")
+            switch (sourceName)
             {
-                var start = ((ConstantExpression)methodCallExpression.Arguments[0]).Value.ToInt() + 1;
-                if (methodCallExpression.Arguments.Count > 1)
-                {
-                    var length = ((ConstantExpression)methodCallExpression.Arguments[1]).Value.ToInt();
-                    return $"SUBSTR({columnName},{start},{length})";
-                }
-
-                return $"SUBSTR({columnName},{start})";
-            }
-
-            if (methodName == "ToString")
-            {
-                if (methodCallExpression.Object!.Type.IsDateTime())
-                {
-                    var arg = ((ConstantExpression)methodCallExpression.Arguments[0]).Value;
-                    if (arg != null)
+                case "Substring":
+                    return Mapper_Substring(columnName, arg0, arg1);
+                case "ToString":
+                    if (dataType.IsDateTime() && arg0 != null)
                     {
-                        var format = arg.ToString();
-                        format = format!.Replace("YYYY", "%Y")
-                            .Replace("YY", "%y")
-                            .Replace("MM", "%m")
-                            .Replace("DD", "%d")
-                            .Replace("HH", "%k")
-                            .Replace("mm", "%i")
-                            .Replace("ss", "%s");
-
-                        return $"DATE_FORMAT({columnName},'{format}')";
+                        return Mapper_DatetimeToString(columnName, arg0);
                     }
-                }
-            }
-
-            if (methodName == "Replace")
-            {
-                var oldValue = ((ConstantExpression)methodCallExpression.Arguments[0]).Value;
-                var newValue = ((ConstantExpression)methodCallExpression.Arguments[1]).Value;
-
-                return $"REPLACE({columnName},'{oldValue}','{newValue}')";
-            }
-
-            if (methodName == "ToLower")
-            {
-                return $"LOWER({columnName})";
-            }
-
-            if (methodName == "ToUpper")
-            {
-                return $"UPPER({columnName})";
-            }
-
-            return string.Empty;
-        }
-
-        public override string Property2Func(string propertyName, string columnName)
-        {
-            switch (propertyName)
-            {
+                    return string.Empty;
+                case "Replace":
+                    return $"REPLACE({columnName},'{arg0}','{arg1}')";
+                case "ToLower":
+                    return $"LOWER({columnName})";
+                case "ToUpper":
+                    return $"UPPER({columnName})";
                 case "Length":
                     return $"CHAR_LENGTH({columnName})";
                 case "Count":
                     return "COUNT(0)";
                 case "Sum":
+                    return $"SUM({columnName})";
                 case "Avg":
+                    return $"AVG({columnName})";
                 case "Max":
+                    return $"MAX({columnName})";
                 case "Min":
-                    return $"{propertyName.ToUpper()}({columnName})";
+                    return $"MIN({columnName})";
                 default:
                     return string.Empty;
             }
         }
+
+        private string Mapper_Substring(string columnName, object arg0, object arg1)
+        {
+            if (arg1 != null)
+            {
+                return $"SUBSTR({columnName},{arg0.ToInt() + 1},{arg1})";
+            }
+
+            return $"SUBSTR({columnName},{arg0.ToInt() + 1})";
+        }
+
+        private string Mapper_DatetimeToString(string columnName, object arg0)
+        {
+            var format = arg0.ToString();
+            format = format!.Replace("YYYY", "%Y")
+                .Replace("YY", "%y")
+                .Replace("MM", "%m")
+                .Replace("DD", "%d")
+                .Replace("HH", "%k")
+                .Replace("mm", "%i")
+                .Replace("ss", "%s");
+
+            return $"DATE_FORMAT({columnName},'{format}')";
+        }
+
+        #endregion
     }
 }

@@ -358,16 +358,6 @@ namespace Mkh.Data.Abstractions.Queryable
 
         #endregion
 
-        #region ==Copy==
-
-        /// <summary>
-        /// 复制当前查询实例
-        /// </summary>
-        /// <returns></returns>
-        IQueryable<TEntity> Copy();
-
-        #endregion
-
         #region ==Update==
 
         /// <summary>
@@ -423,6 +413,44 @@ namespace Mkh.Data.Abstractions.Queryable
         /// </summary>
         /// <returns></returns>
         Task<TEntity> First();
+
+        #endregion
+
+        #region ==Function==
+
+        /// <summary>
+        /// 获取最大值
+        /// </summary>
+        /// <returns></returns>
+        Task<TResult> Max<TResult>(Expression<Func<TEntity, TResult>> expression);
+
+        /// <summary>
+        /// 获取最小值
+        /// </summary>
+        /// <returns></returns>
+        Task<TResult> Min<TResult>(Expression<Func<TEntity, TResult>> expression);
+
+        /// <summary>
+        /// 求和
+        /// </summary>
+        /// <returns></returns>
+        Task<TResult> Sum<TResult>(Expression<Func<TEntity, TResult>> expression);
+
+        /// <summary>
+        /// 求平均值
+        /// </summary>
+        /// <returns></returns>
+        Task<TResult> Avg<TResult>(Expression<Func<TEntity, TResult>> expression);
+
+        #endregion
+
+        #region ==Copy==
+
+        /// <summary>
+        /// 复制当前查询实例
+        /// </summary>
+        /// <returns></returns>
+        IQueryable<TEntity> Copy();
 
         #endregion
     }

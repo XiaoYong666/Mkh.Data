@@ -30,7 +30,12 @@ namespace Mkh.Data.Core.Queryable.Internal
         /// <summary>
         /// 函数计算表达式
         /// </summary>
-        public LambdaExpression Function { get; set; }
+        public LambdaExpression FunctionExpression { get; set; }
+
+        /// <summary>
+        /// 函数名称
+        /// </summary>
+        public string FunctionName { get; set; }
     }
 
     /// <summary>

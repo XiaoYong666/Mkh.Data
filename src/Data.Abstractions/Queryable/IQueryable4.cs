@@ -400,6 +400,34 @@ namespace Mkh.Data.Abstractions.Queryable
 
         #endregion
 
+        #region ==Function==
+
+        /// <summary>
+        /// 获取最大值
+        /// </summary>
+        /// <returns></returns>
+        Task<TResult> Max<TResult>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TResult>> expression);
+
+        /// <summary>
+        /// 获取最小值
+        /// </summary>
+        /// <returns></returns>
+        Task<TResult> Min<TResult>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TResult>> expression);
+
+        /// <summary>
+        /// 求和
+        /// </summary>
+        /// <returns></returns>
+        Task<TResult> Sum<TResult>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TResult>> expression);
+
+        /// <summary>
+        /// 求平均值
+        /// </summary>
+        /// <returns></returns>
+        Task<TResult> Avg<TResult>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TResult>> expression);
+
+        #endregion
+
         #region ==Copy==
 
         /// <summary>

@@ -303,15 +303,6 @@ namespace Mkh.Data.Core.Queryable
 
         #endregion
 
-        #region ==复制==
-
-        public IQueryable<TEntity> Copy()
-        {
-            throw new NotImplementedException();
-        }
-
-        #endregion
-
         #region ==更新==
 
         public Task Update(Expression<Func<TEntity, TEntity>> expression)
@@ -357,6 +348,39 @@ namespace Mkh.Data.Core.Queryable
         public Task<TEntity> First()
         {
             return First<TEntity>();
+        }
+
+        #endregion
+
+        #region ==Function==
+
+        public Task<TResult> Max<TResult>(Expression<Func<TEntity, TResult>> expression)
+        {
+            return base.Max<TResult>(expression);
+        }
+
+        public Task<TResult> Min<TResult>(Expression<Func<TEntity, TResult>> expression)
+        {
+            return base.Min<TResult>(expression);
+        }
+
+        public Task<TResult> Sum<TResult>(Expression<Func<TEntity, TResult>> expression)
+        {
+            return base.Sum<TResult>(expression);
+        }
+
+        public Task<TResult> Avg<TResult>(Expression<Func<TEntity, TResult>> expression)
+        {
+            return base.Avg<TResult>(expression);
+        }
+
+        #endregion
+
+        #region ==复制==
+
+        public IQueryable<TEntity> Copy()
+        {
+            throw new NotImplementedException();
         }
 
         #endregion
