@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Data.Common.Test.Domain.Article;
-using Data.Common.Test.Domain.Category;
 using Microsoft.Extensions.DependencyInjection;
 using Mkh.Data.Abstractions.Extensions;
 using Mkh.Data.Abstractions.Pagination;
@@ -36,11 +35,12 @@ namespace Data.Adapter.MySql.Test
                 Content = "test"
             };
 
-            await _repository.Add(article);
+            var b = await _repository.Add(article);
             /*INSERT INTO `Article` (`CategoryId`,`Title`,`Content`,`Published`,`PublishedTime`,`TimeSpan`,`CreatedBy`,
             `Creator`,`CreatedTime`,`ModifiedBy`,`Modifier`,`ModifiedTime`) VALUES(@CategoryId,@Title,@Content,@Published,
             @PublishedTime,@TimeSpan,@CreatedBy,@Creator,@CreatedTime,@ModifiedBy,@Modifier,@ModifiedTime);*/
 
+            Assert.True(b);
             Assert.True(article.Id > 0);
 
             var article1 = await _repository.Get(article.Id);
@@ -100,6 +100,11 @@ namespace Data.Adapter.MySql.Test
 
             Assert.Equal(article1.Title, article2.Title);
             Assert.Equal("OLDLI", article1.Modifier);
+
+            //条件批量更新
+            result = await _repository.Find(m => m.Id > 10).Update(m => new ArticleEntity { Title = "条件更新" });
+
+            Assert.True(result);
         }
 
         [Fact]

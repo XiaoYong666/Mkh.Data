@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
@@ -41,6 +40,26 @@ namespace Mkh.Data.Core.Queryable
             var sql = _sqlBuilder.BuildListSql(out IQueryParameters parameters);
             _logger.Write("List", sql);
             return (await _repository.Query<TResult>(sql, parameters.ToDynamicParameters())).ToList();
+        }
+
+        public string ListSql()
+        {
+            return _sqlBuilder.BuildListSql(out _);
+        }
+
+        public string ListSql(out IQueryParameters parameters)
+        {
+            return _sqlBuilder.BuildListSql(out parameters);
+        }
+
+        public string ListSql(IQueryParameters parameters)
+        {
+            return _sqlBuilder.BuildListSql(parameters);
+        }
+
+        public string ListSqlNotUseParameters()
+        {
+            return _sqlBuilder.BuildListSqlNotUseParameters();
         }
 
         #endregion
@@ -93,6 +112,46 @@ namespace Mkh.Data.Core.Queryable
             return (await task).ToList();
         }
 
+        public string PaginationSql(Paging paging)
+        {
+            if (paging == null)
+                _queryBody.SetLimit(1, 15);
+            else
+                _queryBody.SetLimit(paging.Skip, paging.Size);
+
+            return _sqlBuilder.BuildPaginationSql(out _);
+        }
+
+        public string PaginationSql(Paging paging, out IQueryParameters parameters)
+        {
+            if (paging == null)
+                _queryBody.SetLimit(1, 15);
+            else
+                _queryBody.SetLimit(paging.Skip, paging.Size);
+
+            return _sqlBuilder.BuildPaginationSql(out parameters);
+        }
+
+        public string PaginationSql(Paging paging, IQueryParameters parameters)
+        {
+            if (paging == null)
+                _queryBody.SetLimit(1, 15);
+            else
+                _queryBody.SetLimit(paging.Skip, paging.Size);
+
+            return _sqlBuilder.BuildPaginationSql(parameters);
+        }
+
+        public string PaginationSqlNotUseParameters(Paging paging)
+        {
+            if (paging == null)
+                _queryBody.SetLimit(1, 15);
+            else
+                _queryBody.SetLimit(paging.Skip, paging.Size);
+
+            return _sqlBuilder.BuildPaginationSqlNotUseParameters();
+        }
+
         #endregion
 
         #region ==First==
@@ -109,6 +168,26 @@ namespace Mkh.Data.Core.Queryable
             return _repository.QueryFirstOrDefault<TResult>(sql, parameters.ToDynamicParameters());
         }
 
+        public string FirstSql()
+        {
+            return _sqlBuilder.BuildFirstSql(out _);
+        }
+
+        public string FirstSql(out IQueryParameters parameters)
+        {
+            return _sqlBuilder.BuildFirstSql(out parameters);
+        }
+
+        public string FirstSql(IQueryParameters parameters)
+        {
+            return _sqlBuilder.BuildFirstSql(parameters);
+        }
+
+        public string FirstSqlNotUseParameters()
+        {
+            return _sqlBuilder.BuildFirstSqlNotUserParameters();
+        }
+
         #endregion
 
         #region ==Count==
@@ -118,6 +197,26 @@ namespace Mkh.Data.Core.Queryable
             var sql = _sqlBuilder.BuildCountSql(out IQueryParameters parameters);
             _logger.Write("Count", sql);
             return _repository.ExecuteScalar<long>(sql, parameters.ToDynamicParameters());
+        }
+
+        public string CountSql()
+        {
+            return _sqlBuilder.BuildCountSql(out _);
+        }
+
+        public string CountSql(out IQueryParameters parameters)
+        {
+            return _sqlBuilder.BuildCountSql(out parameters);
+        }
+
+        public string CountSql(IQueryParameters parameters)
+        {
+            return _sqlBuilder.BuildCountSql(parameters);
+        }
+
+        public string CountSqlNotUseParameters()
+        {
+            return _sqlBuilder.BuildCountSqlNotUseParameters();
         }
 
         #endregion
@@ -131,57 +230,161 @@ namespace Mkh.Data.Core.Queryable
             return await _repository.ExecuteScalar<int>(sql, parameters.ToDynamicParameters()) > 0;
         }
 
-        #endregion
-
-        #region ==Delete==
-
-        public Task<bool> Delete()
+        public string ExistsSql()
         {
-            throw new NotImplementedException();
+            return _sqlBuilder.BuildExistsSql(out _);
         }
 
-        public Task<int> DeleteWithAffectedNum()
+        public string ExistsSql(out IQueryParameters parameters)
         {
-            throw new NotImplementedException();
+            return _sqlBuilder.BuildExistsSql(out parameters);
         }
 
-        #endregion
-
-        #region ==SoftDelete==
-
-        public Task<bool> SoftDelete()
+        public string ExistsSql(IQueryParameters parameters)
         {
-            throw new NotImplementedException();
+            return _sqlBuilder.BuildExistsSql(parameters);
         }
 
-        public Task<int> SoftDeleteWithAffectedNum()
+        public string ExistsSqlNotUseParameters()
         {
-            throw new NotImplementedException();
+            return _sqlBuilder.BuildExistsSqlNotUseParameters();
         }
 
         #endregion
 
-        #region ==Function==
+        #region ==Max==
 
         protected Task<TResult> Max<TResult>(LambdaExpression expression)
         {
             return ExecuteFunction<TResult>("Max", expression);
         }
 
+        public string MaxSql(LambdaExpression expression)
+        {
+            _queryBody.SetFunctionSelect(expression, "Max");
+            return _sqlBuilder.BuildFunctionSql(out _);
+        }
+
+        public string MaxSql(LambdaExpression expression, out IQueryParameters parameters)
+        {
+            _queryBody.SetFunctionSelect(expression, "Max");
+            return _sqlBuilder.BuildFunctionSql(out parameters);
+        }
+
+        public string MaxSql(LambdaExpression expression, IQueryParameters parameters)
+        {
+            _queryBody.SetFunctionSelect(expression, "Max");
+            return _sqlBuilder.BuildFunctionSql(parameters);
+        }
+
+        public string MaxSqlNotUseParameters(LambdaExpression expression)
+        {
+            _queryBody.SetFunctionSelect(expression, "Max");
+            return _sqlBuilder.BuildFunctionSqlNotUseParameters();
+        }
+
+        #endregion
+
+        #region ==Min==
+        
         protected Task<TResult> Min<TResult>(LambdaExpression expression)
         {
             return ExecuteFunction<TResult>("Min", expression);
         }
+
+        public string MinSql(LambdaExpression expression)
+        {
+            _queryBody.SetFunctionSelect(expression, "Min");
+            return _sqlBuilder.BuildFunctionSql(out _);
+        }
+
+        public string MinSql(LambdaExpression expression, out IQueryParameters parameters)
+        {
+            _queryBody.SetFunctionSelect(expression, "Min");
+            return _sqlBuilder.BuildFunctionSql(out parameters);
+        }
+
+        public string MinSql(LambdaExpression expression, IQueryParameters parameters)
+        {
+            _queryBody.SetFunctionSelect(expression, "Min");
+            return _sqlBuilder.BuildFunctionSql(parameters);
+        }
+
+        public string MinSqlNotUseParameters(LambdaExpression expression)
+        {
+            _queryBody.SetFunctionSelect(expression, "Min");
+            return _sqlBuilder.BuildFunctionSqlNotUseParameters();
+        }
+
+        #endregion
+
+        #region ==Sum==
 
         protected Task<TResult> Sum<TResult>(LambdaExpression expression)
         {
             return ExecuteFunction<TResult>("Sum", expression);
         }
 
+        public string SumSql(LambdaExpression expression)
+        {
+            _queryBody.SetFunctionSelect(expression, "Sum");
+            return _sqlBuilder.BuildFunctionSql(out _);
+        }
+
+        public string SumSql(LambdaExpression expression, out IQueryParameters parameters)
+        {
+            _queryBody.SetFunctionSelect(expression, "Sum");
+            return _sqlBuilder.BuildFunctionSql(out parameters);
+        }
+
+        public string SumSql(LambdaExpression expression, IQueryParameters parameters)
+        {
+            _queryBody.SetFunctionSelect(expression, "Sum");
+            return _sqlBuilder.BuildFunctionSql(parameters);
+        }
+
+        public string SumSqlNotUseParameters(LambdaExpression expression)
+        {
+            _queryBody.SetFunctionSelect(expression, "Sum");
+            return _sqlBuilder.BuildFunctionSqlNotUseParameters();
+        }
+
+        #endregion
+
+        #region ==Avg==
+
         protected Task<TResult> Avg<TResult>(LambdaExpression expression)
         {
             return ExecuteFunction<TResult>("Avg", expression);
         }
+
+        public string AvgSql(LambdaExpression expression)
+        {
+            _queryBody.SetFunctionSelect(expression, "Avg");
+            return _sqlBuilder.BuildFunctionSql(out _);
+        }
+
+        public string AvgSql(LambdaExpression expression, out IQueryParameters parameters)
+        {
+            _queryBody.SetFunctionSelect(expression, "Avg");
+            return _sqlBuilder.BuildFunctionSql(out parameters);
+        }
+
+        public string AvgSql(LambdaExpression expression, IQueryParameters parameters)
+        {
+            _queryBody.SetFunctionSelect(expression, "Avg");
+            return _sqlBuilder.BuildFunctionSql(parameters);
+        }
+
+        public string AvgSqlNotUseParameters(LambdaExpression expression)
+        {
+            _queryBody.SetFunctionSelect(expression, "Avg");
+            return _sqlBuilder.BuildFunctionSqlNotUseParameters();
+        }
+
+        #endregion
+
+        #region ==Function==
 
         private Task<TResult> ExecuteFunction<TResult>(string functionName, LambdaExpression expression)
         {
@@ -189,25 +392,6 @@ namespace Mkh.Data.Core.Queryable
             var sql = _sqlBuilder.BuildFunctionSql(out IQueryParameters parameters);
             _logger.Write(functionName, sql);
             return _repository.ExecuteScalar<TResult>(sql, parameters.ToDynamicParameters());
-        }
-
-        #endregion
-
-        #region ==SQL==
-
-        public string Sql()
-        {
-            throw new NotImplementedException();
-        }
-
-        public string Sql(out IQueryParameters parameters)
-        {
-            throw new NotImplementedException();
-        }
-
-        public string Sql(IQueryParameters parameters)
-        {
-            throw new NotImplementedException();
         }
 
         #endregion

@@ -107,7 +107,6 @@ namespace Mkh.Data.Abstractions
         /// <returns></returns>
         Task<IEnumerable<dynamic>> Query(string sql, object param = null, CommandType? commandType = null);
 
-
         /// <summary>
         /// 查询数据列表并返回指定类型
         /// </summary>
@@ -128,7 +127,7 @@ namespace Mkh.Data.Abstractions
         /// </summary>
         /// <param name="entity">实体</param>
         /// <returns></returns>
-        Task Add(TEntity entity);
+        Task<bool> Add(TEntity entity);
 
         /// <summary>
         /// 删除

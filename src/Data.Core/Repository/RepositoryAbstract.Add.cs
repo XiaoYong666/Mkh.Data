@@ -10,7 +10,7 @@ namespace Mkh.Data.Core.Repository
     /// <typeparam name="TEntity"></typeparam>
     public abstract partial class RepositoryAbstract<TEntity>
     {
-        public Task Add(TEntity entity)
+        public Task<bool> Add(TEntity entity)
         {
             return Add(entity, null);
         }
@@ -21,7 +21,7 @@ namespace Mkh.Data.Core.Repository
         /// <param name="entity"></param>
         /// <param name="tableName"></param>
         /// <returns></returns>
-        protected async Task Add(TEntity entity, string tableName)
+        protected async Task<bool> Add(TEntity entity, string tableName)
         {
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity), "entity is null");
@@ -43,8 +43,10 @@ namespace Mkh.Data.Core.Repository
                     primaryKey.PropertyInfo.SetValue(entity, id);
 
                     _logger.Write("NewID", id.ToString());
-                    return;
+                    return true;
                 }
+
+                return false;
             }
 
             if (primaryKey.IsLong)
@@ -57,13 +59,14 @@ namespace Mkh.Data.Core.Repository
                     primaryKey.PropertyInfo.SetValue(entity, id);
 
                     _logger.Write("NewID", id.ToString());
-                    return;
+                    return true;
                 }
+                return false;
             }
 
             if (primaryKey.IsGuid)
             {
-                var id = (Guid)primaryKey.PropertyInfo.GetValue(entity);
+                var id = (Guid)primaryKey.PropertyInfo.GetValue(entity)!;
                 if (id == Guid.Empty)
                     primaryKey.PropertyInfo.SetValue(entity, Guid.NewGuid());
 
@@ -71,16 +74,12 @@ namespace Mkh.Data.Core.Repository
 
                 if (await Execute(sql, entity) > 0)
                 {
-                    return;
+                    return true;
                 }
+                return false;
             }
 
-            if (await Execute(sql, entity) > 0)
-            {
-                return;
-            }
-
-            throw new ApplicationException("实体新增失败");
+            return await Execute(sql, entity) > 0;
         }
 
         /// <summary>

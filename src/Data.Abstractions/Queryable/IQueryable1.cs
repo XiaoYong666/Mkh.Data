@@ -362,20 +362,133 @@ namespace Mkh.Data.Abstractions.Queryable
 
         /// <summary>
         /// 更新
-        /// <para>数据不存在也是返回true</para>
+        /// <para>如果受影响的行数大于0，则返回true，反之false</para>
+        /// <para>如果需要判断受影响的行数，可以使用 UpdateWithAffectedRowsNumber 方法 </para>
         /// </summary>
         /// <param name="expression"></param>
         /// <returns></returns>
-        Task Update(Expression<Func<TEntity, TEntity>> expression);
+        Task<bool> Update(Expression<Func<TEntity, TEntity>> expression);
+
+        /// <summary>
+        /// 更新并返回受影响的行数
+        /// <para>返回受影响的行数</para>
+        /// </summary>
+        /// <param name="expression">更新表达式</param>
+        /// <returns></returns>
+        Task<int> UpdateWithAffectedRowsNumber(Expression<Func<TEntity, TEntity>> expression);
 
         /// <summary>
         /// 更新
-        /// <para>数据不存在也是返回true</para>
+        /// <para>如果受影响的行数大于0，则返回true，反之false</para>
+        /// <para>如果需要判断受影响的行数，可以使用 UpdateWithAffectedRowsNumber 方法 </para>
         /// </summary>
-        /// <param name="updateSql">手写更新sql</param>
-        /// <param name="parameterObject">参数对象</param>
+        /// <param name="updateSql">原生sql</param>
+        /// <param name="parameters">参数对象</param>
         /// <returns></returns>
-        Task Update(string updateSql, object parameterObject = null);
+        Task<bool> Update(string updateSql, Dictionary<string, object> parameters = null);
+
+        /// <summary>
+        /// 更新并返回受影响的行数
+        /// <para>返回受影响的行数</para>
+        /// </summary>
+        /// <param name="updateSql">原生sql</param>
+        /// <param name="parameters">参数集合</param>
+        /// <returns></returns>
+        Task<int> UpdateWithAffectedRowsNumber(string updateSql, Dictionary<string, object> parameters = null);
+
+        /// <summary>
+        /// 获取更新SQL
+        /// </summary>
+        /// <param name="expression">更新表达式</param>
+        /// <returns></returns>
+        string UpdateSql(Expression<Func<TEntity, TEntity>> expression);
+
+        /// <summary>
+        /// 获取更新SQL，并返回参数
+        /// </summary>
+        /// <param name="expression">更新表达式</param>
+        /// <param name="parameters">参数</param>
+        /// <returns></returns>
+        string UpdateSql(Expression<Func<TEntity, TEntity>> expression, out IQueryParameters parameters);
+
+        /// <summary>
+        /// 获取更新SQL，并设置参数
+        /// </summary>
+        /// <param name="expression">更新表达式</param>
+        /// <param name="parameters">参数</param>
+        /// <returns></returns>
+        string UpdateSql(Expression<Func<TEntity, TEntity>> expression, IQueryParameters parameters);
+
+        /// <summary>
+        /// 获取更新SQL，并且不使用参数化
+        /// </summary>
+        /// <param name="expression">更新表达式</param>
+        /// <returns></returns>
+        string UpdateNotUseParameters(Expression<Func<TEntity, TEntity>> expression);
+
+        /// <summary>
+        /// 获取更新SQL
+        /// </summary>
+        /// <param name="updateSql">更新SQL</param>
+        /// <returns></returns>
+        string UpdateSql(string updateSql);
+
+        /// <summary>
+        /// 获取更新SQL，并返回参数
+        /// </summary>
+        /// <param name="updateSql">更新SQL</param>
+        /// <param name="parameters">参数</param>
+        /// <returns></returns>
+        string UpdateSql(string updateSql, out IQueryParameters parameters);
+
+        /// <summary>
+        /// 获取更新SQL，并设置参数
+        /// </summary>
+        /// <param name="updateSql">更新SQL</param>
+        /// <param name="parameters">参数</param>
+        /// <returns></returns>
+        string UpdateSql(string updateSql, IQueryParameters parameters);
+
+        /// <summary>
+        /// 获取更新SQL，并且不使用参数化
+        /// </summary>
+        /// <param name="updateSql">更新SQL</param>
+        /// <returns></returns>
+        string UpdateNotUseParameters(string updateSql);
+
+        #endregion
+
+        #region ==Delete==
+
+        /// <summary>
+        /// 删除
+        /// <para>即使数据不存在，也不会抛出异常，如果需要判断受影响的行数，可以使用 DeleteWithAffectedRowsNumber 方法 </para>
+        /// </summary>
+        /// <returns></returns>
+        Task Delete();
+
+        /// <summary>
+        /// 删除数据并返回影响条数
+        /// </summary>
+        /// <returns></returns>
+        Task<int> DeleteWithAffectedRowsNumber();
+
+        #endregion
+
+        #region ==SoftDelete==
+
+        /// <summary>
+        /// 软删除
+        /// <para>即使数据不存在，也不会抛出异常，如果需要判断受影响的行数，可以使用 DeleteWithAffectedRowsNumber 方法 </para>
+        /// </summary>
+        /// <returns></returns>
+        Task<bool> SoftDelete();
+
+        /// <summary>
+        /// 软删除并返回影响条数
+        /// </summary>
+        /// <returns></returns>
+        Task<int> SoftDeleteWithAffectedRowsNumber();
 
         #endregion
 

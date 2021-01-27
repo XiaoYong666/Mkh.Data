@@ -35,12 +35,19 @@ namespace Mkh.Data.Core.SqlBuilder
         private readonly IDbAdapter _dbAdapter;
         private readonly IDbContext _dbContext;
 
+        /// <summary>
+        /// 是否使用参数化
+        /// </summary>
+        private bool _useParameters = true;
+
         public QueryableSqlBuilder(QueryBody queryBody)
         {
             _queryBody = queryBody;
             _dbContext = queryBody.Repository.DbContext;
             _dbAdapter = _dbContext.Adapter;
         }
+
+        #region ==BuildListSql==
 
         /// <summary>
         /// 生成列表语句
@@ -50,7 +57,16 @@ namespace Mkh.Data.Core.SqlBuilder
         public string BuildListSql(out IQueryParameters parameters)
         {
             parameters = new QueryParameters();
+            return BuildListSql(parameters);
+        }
 
+        /// <summary>
+        /// 生成列表语句
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        public string BuildListSql(IQueryParameters parameters)
+        {
             var sqlBuilder = new StringBuilder();
             sqlBuilder.Append("SELECT ");
             ResolveSelect(sqlBuilder);
@@ -64,6 +80,22 @@ namespace Mkh.Data.Core.SqlBuilder
         }
 
         /// <summary>
+        /// 生成列表语句，不使用参数化
+        /// </summary>
+        /// <returns></returns>
+        public string BuildListSqlNotUseParameters()
+        {
+            _useParameters = false;
+            var sql = BuildListSql(out _);
+            _useParameters = true;
+            return sql;
+        }
+
+        #endregion
+
+        #region ==BuildFirstSql==
+
+        /// <summary>
         /// 生成获取第一条记录语句
         /// </summary>
         /// <param name="parameters"></param>
@@ -71,7 +103,16 @@ namespace Mkh.Data.Core.SqlBuilder
         public string BuildFirstSql(out IQueryParameters parameters)
         {
             parameters = new QueryParameters();
+            return BuildFirstSql(parameters);
+        }
 
+        /// <summary>
+        /// 生成获取第一条记录语句
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        public string BuildFirstSql(IQueryParameters parameters)
+        {
             var select = ResolveSelect();
             var from = ResolveFrom(parameters);
             var where = ResolveWhere(parameters);
@@ -81,6 +122,22 @@ namespace Mkh.Data.Core.SqlBuilder
         }
 
         /// <summary>
+        /// 生成获取第一条记录语句，并且不使用参数化
+        /// </summary>
+        /// <returns></returns>
+        public string BuildFirstSqlNotUserParameters()
+        {
+            _useParameters = false;
+            var sql = BuildFirstSql(out _);
+            _useParameters = true;
+            return sql;
+        }
+
+        #endregion
+
+        #region ==BuildPaginationSql==
+
+        /// <summary>
         /// 生成分页查询语句
         /// </summary>
         /// <param name="parameters"></param>
@@ -88,7 +145,16 @@ namespace Mkh.Data.Core.SqlBuilder
         public string BuildPaginationSql(out IQueryParameters parameters)
         {
             parameters = new QueryParameters();
+            return BuildPaginationSql(parameters);
+        }
 
+        /// <summary>
+        /// 生成分页查询语句
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        public string BuildPaginationSql(IQueryParameters parameters)
+        {
             var select = ResolveSelect();
             var from = ResolveFrom(parameters);
             var where = ResolveWhere(parameters);
@@ -98,14 +164,34 @@ namespace Mkh.Data.Core.SqlBuilder
         }
 
         /// <summary>
+        /// 生成分页查询语句，并且不使用参数化
+        /// </summary>
+        /// <returns></returns>
+        public string BuildPaginationSqlNotUseParameters()
+        {
+            _useParameters = false;
+            var sql = BuildPaginationSql(out _);
+            _useParameters = true;
+            return sql;
+        }
+
+        #endregion
+
+        #region ==BuildCountSql==
+
+        public string BuildCountSql(out IQueryParameters parameters)
+        {
+            parameters = new QueryParameters();
+            return BuildCountSql(parameters);
+        }
+
+        /// <summary>
         /// 生成数量查询SQL
         /// </summary>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        public string BuildCountSql(out IQueryParameters parameters)
+        public string BuildCountSql(IQueryParameters parameters)
         {
-            parameters = new QueryParameters();
-
             var sqlBuilder = new StringBuilder("SELECT COUNT(*) FROM ");
 
             ResolveFrom(sqlBuilder, parameters);
@@ -118,6 +204,22 @@ namespace Mkh.Data.Core.SqlBuilder
         }
 
         /// <summary>
+        /// 生成数量查询SQL，并且不使用参数化
+        /// </summary>
+        /// <returns></returns>
+        public string BuildCountSqlNotUseParameters()
+        {
+            _useParameters = false;
+            var sql = BuildCountSql(out _);
+            _useParameters = true;
+            return sql;
+        }
+
+        #endregion
+
+        #region ==BuildExistsSql==
+
+        /// <summary>
         /// 生成判断存在语句
         /// </summary>
         /// <param name="parameters"></param>
@@ -125,7 +227,16 @@ namespace Mkh.Data.Core.SqlBuilder
         public string BuildExistsSql(out IQueryParameters parameters)
         {
             parameters = new QueryParameters();
+            return BuildExistsSql(parameters);
+        }
 
+        /// <summary>
+        /// 生成判断存在语句
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        public string BuildExistsSql(IQueryParameters parameters)
+        {
             var select = "1";
             var from = ResolveFrom(parameters);
             var where = ResolveWhere(parameters);
@@ -137,6 +248,22 @@ namespace Mkh.Data.Core.SqlBuilder
         }
 
         /// <summary>
+        /// 生成判断存在语句，并且不使用参数化
+        /// </summary>
+        /// <returns></returns>
+        public string BuildExistsSqlNotUseParameters()
+        {
+            _useParameters = false;
+            var sql = BuildExistsSql(out _);
+            _useParameters = true;
+            return sql;
+        }
+
+        #endregion
+
+        #region ==BuildFunctionSql==
+
+        /// <summary>
         /// 生成函数SQL
         /// </summary>
         /// <param name="parameters"></param>
@@ -144,6 +271,16 @@ namespace Mkh.Data.Core.SqlBuilder
         public string BuildFunctionSql(out IQueryParameters parameters)
         {
             parameters = new QueryParameters();
+            return BuildFunctionSql(parameters);
+        }
+
+        /// <summary>
+        /// 生成函数SQL
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        public string BuildFunctionSql(IQueryParameters parameters)
+        {
 
             var sqlBuilder = new StringBuilder();
             sqlBuilder.Append("SELECT ");
@@ -169,6 +306,94 @@ namespace Mkh.Data.Core.SqlBuilder
 
             return sqlBuilder.ToString();
         }
+
+        /// <summary>
+        /// 生成函数SQL，并且不使用参数化
+        /// </summary>
+        /// <returns></returns>
+        public string BuildFunctionSqlNotUseParameters()
+        {
+            _useParameters = false;
+            var sql = BuildFunctionSql(out _);
+            _useParameters = true;
+            return sql;
+        }
+
+        #endregion
+
+        #region ==BuildUpdateSql==
+
+        /// <summary>
+        /// 生成更新SQL
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        public string BuildUpdateSql(out IQueryParameters parameters)
+        {
+            parameters = new QueryParameters();
+            return BuildUpdateSql(parameters);
+        }
+
+        /// <summary>
+        /// 生成更新SQL
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        public string BuildUpdateSql(IQueryParameters parameters)
+        {
+            var tableName = _queryBody.Joins.First().TableName;
+            Check.NotNull(tableName, nameof(tableName), "未指定更新表");
+
+            var sqlBuilder = new StringBuilder();
+
+            //更新语句优先
+            var updateSql = _queryBody.Update.Sql.NotNull() ? _queryBody.Update.Sql : ResolveExpression(_queryBody.Update.Lambda, parameters);
+            Check.NotNull(updateSql, nameof(updateSql), "生成更新sql异常");
+
+            sqlBuilder.AppendFormat("UPDATE {0} SET ", _dbAdapter.AppendQuote(tableName));
+            sqlBuilder.Append(updateSql);
+
+            SetUpdateInfo(sqlBuilder, parameters);
+
+            var whereSql = ResolveWhere(parameters);
+            Check.NotNull(whereSql, nameof(whereSql), "批量更新必须指定条件");
+            sqlBuilder.AppendFormat(" {0};", whereSql);
+
+            return sqlBuilder.ToString();
+        }
+
+        /// <summary>
+        /// 生成更新SQL，并且不使用参数化
+        /// </summary>
+        /// <returns></returns>
+        public string BuildUpdateSqlNotUseParameters()
+        {
+            _useParameters = false;
+            var sql = BuildUpdateSql(out _);
+            _useParameters = true;
+            return sql;
+        }
+
+        /// <summary>
+        /// 设置更新信息
+        /// </summary>
+        /// <param name="sqlBuilder"></param>
+        /// <param name="parameters"></param>
+        private void SetUpdateInfo(StringBuilder sqlBuilder, IQueryParameters parameters)
+        {
+            var descriptor = _queryBody.Joins.First().EntityDescriptor;
+            if (descriptor.IsEntityBase)
+            {
+                var p1 = parameters.Add(_dbContext.AccountResolver.AccountId);
+                sqlBuilder.AppendFormat(",{0} = @{1}", _dbAdapter.AppendQuote(descriptor.GetModifiedByColumnName()), p1);
+                var p2 = parameters.Add(_dbContext.AccountResolver.AccountName);
+                sqlBuilder.AppendFormat(",{0} = @{1}", _dbAdapter.AppendQuote(descriptor.GetModifierColumnName()), p2);
+                var p3 = parameters.Add(DateTime.Now);
+                sqlBuilder.AppendFormat(",{0} = @{1}", _dbAdapter.AppendQuote(descriptor.GetModifiedTimeColumnName()), p3);
+            }
+        }
+
+        #endregion
 
         #region ==解析查询列==
 
@@ -404,7 +629,6 @@ namespace Mkh.Data.Core.SqlBuilder
         {
             var first = _queryBody.Joins.First();
 
-            //
             if (_queryBody.Joins.Count == 1)
             {
                 sqlBuilder.AppendFormat("{0}", _dbAdapter.AppendQuote(first.TableName));
@@ -629,7 +853,7 @@ namespace Mkh.Data.Core.SqlBuilder
                             break;
                         case QueryWhereMode.SubQuery:
                             ResolveExpression(w.SubQueryColumn.Body, w.SubQueryColumn, sqlBuilder, parameters);
-                            var subSql = w.SubQueryable.Sql(parameters);
+                            var subSql = w.SubQueryable.ListSql(parameters);
                             sqlBuilder.AppendFormat("{0} ({1})", w.SubQueryOperator, subSql);
                             break;
                         case QueryWhereMode.Sql:
@@ -803,7 +1027,7 @@ namespace Mkh.Data.Core.SqlBuilder
                     ResolveCallExpression(expression as MethodCallExpression, fullLambda, sqlBuilder, parameters);
                     break;
                 case ExpressionType.MemberInit:
-                    ResolveMemberInitExpression(expression, sqlBuilder);
+                    ResolveMemberInitExpression(expression, fullLambda, sqlBuilder, parameters);
                     break;
             }
         }
@@ -996,11 +1220,33 @@ namespace Mkh.Data.Core.SqlBuilder
         /// <summary>
         /// 解析成员初始化表达式
         /// </summary>
-        /// <param name="exp"></param>
-        /// <param name="sqlBuilder"></param>
-        private void ResolveMemberInitExpression(Expression exp, StringBuilder sqlBuilder)
+        private void ResolveMemberInitExpression(Expression exp, LambdaExpression fullLambda, StringBuilder sqlBuilder, IQueryParameters parameters)
         {
+            if (exp == null || !(exp is MemberInitExpression initExp) || !initExp.Bindings.Any())
+                return;
 
+            for (var i = 0; i < initExp.Bindings.Count; i++)
+            {
+                if (initExp.Bindings[i] is MemberAssignment assignment)
+                {
+                    var descriptor = _queryBody.Joins.First(m => m.EntityDescriptor.EntityType == initExp.Type);
+                    var col = descriptor.EntityDescriptor.Columns.FirstOrDefault(m => m.PropertyInfo.Name.Equals(assignment.Member.Name));
+                    if (col != null)
+                    {
+                        if (_queryBody.Joins.Count > 1)
+                            sqlBuilder.Append($"{_dbAdapter.AppendQuote(descriptor.Alias)}.{_dbAdapter.AppendQuote(col.Name)}");
+                        else
+                            sqlBuilder.Append(_dbAdapter.AppendQuote(col.Name));
+
+                        sqlBuilder.Append(" = ");
+
+                        ResolveExpression(assignment.Expression, fullLambda, sqlBuilder, parameters);
+
+                        if (i < initExp.Bindings.Count - 1)
+                            sqlBuilder.Append(",");
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -1494,8 +1740,38 @@ namespace Mkh.Data.Core.SqlBuilder
                 return;
             }
 
-            var pName = parameters.Add(value);
-            sqlBuilder.Append(_dbAdapter.AppendParameter(pName));
+            if (_useParameters)
+            {
+                //使用参数化
+                var pName = parameters.Add(value);
+                sqlBuilder.Append(_dbAdapter.AppendParameter(pName));
+            }
+            else
+            {
+                var type = value.GetType();
+                //不使用参数化
+                if (type.IsNullable())
+                {
+                    type = Nullable.GetUnderlyingType(type);
+                }
+
+                if (type.IsEnum)
+                {
+                    sqlBuilder.AppendFormat("{0}", value.ToInt());
+                }
+                else if (type.IsBool())
+                {
+                    sqlBuilder.AppendFormat("{0}", value.ToBool() ? _dbAdapter.BooleanTrueValue : _dbAdapter.BooleanFalseValue);
+                }
+                else if (type.IsDateTime())
+                {
+                    sqlBuilder.AppendFormat("'{0:yyyy-MM-dd HH:mm:ss}'", value);
+                }
+                else
+                {
+                    sqlBuilder.AppendFormat("'{0}'", value);
+                }
+            }
         }
     }
 }

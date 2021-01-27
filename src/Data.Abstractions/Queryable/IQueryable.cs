@@ -25,6 +25,32 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <returns></returns>
         Task<IList<TResult>> List<TResult>();
 
+        /// <summary>
+        /// 获取查询列表SQL
+        /// </summary>
+        /// <returns></returns>
+        string ListSql();
+
+        /// <summary>
+        /// 获取查询列表SQL，并返回参数
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        string ListSql(out IQueryParameters parameters);
+
+        /// <summary>
+        /// 获取查询列表SQL，并设置参数
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        string ListSql(IQueryParameters parameters);
+
+        /// <summary>
+        /// 获取查询列表SQL，并且不使用参数化
+        /// </summary>
+        /// <returns></returns>
+        string ListSqlNotUseParameters();
+
         #endregion
 
         #region ==Reader==
@@ -65,6 +91,34 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <returns></returns>
         Task<IList<TResult>> Pagination<TResult>(Paging paging);
 
+        /// <summary>
+        /// 获取分页查询列表SQL
+        /// </summary>
+        /// <returns></returns>
+        string PaginationSql(Paging paging);
+
+        /// <summary>
+        /// 获取分页查询列表SQL，并返回参数
+        /// </summary>
+        /// <param name="paging">分页信息</param>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        string PaginationSql(Paging paging, out IQueryParameters parameters);
+
+        /// <summary>
+        /// 获取分页查询列表SQL，并设置参数
+        /// </summary>
+        /// <param name="paging">分页信息</param>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        string PaginationSql(Paging paging, IQueryParameters parameters);
+
+        /// <summary>
+        /// 获取分页查询列表SQL，并且不使用参数化
+        /// </summary>
+        /// <returns></returns>
+        string PaginationSqlNotUseParameters(Paging paging);
+
         #endregion
 
         #region ==First==
@@ -81,6 +135,32 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <returns></returns>
         Task<TResult> First<TResult>();
 
+        /// <summary>
+        /// 查询第一条数据的SQL
+        /// </summary>
+        /// <returns></returns>
+        string FirstSql();
+
+        /// <summary>
+        /// 查询第一条数据的SQL，并返回参数
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        string FirstSql(out IQueryParameters parameters);
+
+        /// <summary>
+        /// 查询第一条数据的SQL，并设置参数
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        string FirstSql(IQueryParameters parameters);
+
+        /// <summary>
+        /// 查询第一条数据的SQL，并且不使用参数化
+        /// </summary>
+        /// <returns></returns>
+        string FirstSqlNotUseParameters();
+
         #endregion
 
         #region ==Count==
@@ -90,6 +170,32 @@ namespace Mkh.Data.Abstractions.Queryable
         /// </summary>
         /// <returns></returns>
         Task<long> Count();
+
+        /// <summary>
+        /// 查询数量的SQL
+        /// </summary>
+        /// <returns></returns>
+        string CountSql();
+
+        /// <summary>
+        /// 查询数量的SQL，并返回参数
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        string CountSql(out IQueryParameters parameters);
+
+        /// <summary>
+        /// 查询数量的SQL，并设置参数
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        string CountSql(IQueryParameters parameters);
+
+        /// <summary>
+        /// 查询数量的SQL，并且不使用参数化
+        /// </summary>
+        /// <returns></returns>
+        string CountSqlNotUseParameters();
 
         #endregion
 
@@ -101,63 +207,31 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <returns></returns>
         Task<bool> Exists();
 
-        #endregion
-
-        #region ==Delete==
-
         /// <summary>
-        /// 删除
-        /// <para>数据不存在也是返回true</para>
+        /// 判断是否存在的SQL
         /// </summary>
         /// <returns></returns>
-        Task<bool> Delete();
+        string ExistsSql();
 
         /// <summary>
-        /// 删除数据返回影响条数
-        /// </summary>
-        /// <returns></returns>
-        Task<int> DeleteWithAffectedNum();
-
-        #endregion
-
-        #region ==SoftDelete==
-
-        /// <summary>
-        /// 软删除
-        /// <para>数据不存在也是返回true</para>
-        /// </summary>
-        /// <returns></returns>
-        Task<bool> SoftDelete();
-
-        /// <summary>
-        /// 软删除,返回影响条数
-        /// </summary>
-        /// <returns></returns>
-        Task<int> SoftDeleteWithAffectedNum();
-
-        #endregion
-
-        #region ==SQL==
-
-        /// <summary>
-        /// 获取Sql语句
-        /// </summary>
-        /// <returns></returns>
-        string Sql();
-
-        /// <summary>
-        /// 获取Sql语句并返回参数
+        /// 判断是否存在的SQL，并返回参数
         /// </summary>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        string Sql(out IQueryParameters parameters);
+        string ExistsSql(out IQueryParameters parameters);
 
         /// <summary>
-        /// 获取Sql语句并使用指定的参数集
+        /// 判断是否存在的SQL，并设置参数
         /// </summary>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        string Sql(IQueryParameters parameters);
+        string ExistsSql(IQueryParameters parameters);
+
+        /// <summary>
+        /// 判断是否存在的SQL，并且不使用参数化
+        /// </summary>
+        /// <returns></returns>
+        string ExistsSqlNotUseParameters();
 
         #endregion
     }

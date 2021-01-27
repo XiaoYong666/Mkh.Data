@@ -305,17 +305,116 @@ namespace Mkh.Data.Core.Queryable
 
         #region ==更新==
 
-        public Task Update(Expression<Func<TEntity, TEntity>> expression)
+        public async Task<bool> Update(Expression<Func<TEntity, TEntity>> expression)
+        {
+            return await UpdateWithAffectedRowsNumber(expression) > 0;
+        }
+
+        public Task<int> UpdateWithAffectedRowsNumber(Expression<Func<TEntity, TEntity>> expression)
         {
             _queryBody.SetUpdate(expression);
 
-            return Task.CompletedTask;
+            var sql = _sqlBuilder.BuildUpdateSql(out IQueryParameters parameters);
+            _logger.Write("Update", sql);
+            return _repository.Execute(sql, parameters.ToDynamicParameters());
         }
 
-        public Task Update(string updateSql, object parameterObject = null)
+        public async Task<bool> Update(string updateSql, Dictionary<string, object> parameters = null)
+        {
+            return await UpdateWithAffectedRowsNumber(updateSql, parameters) > 0;
+        }
+
+        public Task<int> UpdateWithAffectedRowsNumber(string updateSql, Dictionary<string, object> parameters = null)
         {
             _queryBody.SetUpdate(updateSql);
-            return Task.CompletedTask;
+            var sql = _sqlBuilder.BuildUpdateSql(out IQueryParameters p_);
+            _logger.Write("Update", sql);
+            var dynamicParameters = p_.ToDynamicParameters();
+            if (parameters != null)
+            {
+                foreach (var p in parameters)
+                {
+                    dynamicParameters.Add(p.Key, p.Value);
+                }
+            }
+
+            return _repository.Execute(sql, dynamicParameters);
+        }
+
+        public string UpdateSql(Expression<Func<TEntity, TEntity>> expression)
+        {
+            _queryBody.SetUpdate(expression);
+            return _sqlBuilder.BuildUpdateSql(out _);
+        }
+
+        public string UpdateSql(Expression<Func<TEntity, TEntity>> expression, out IQueryParameters parameters)
+        {
+            _queryBody.SetUpdate(expression);
+            return _sqlBuilder.BuildUpdateSql(out parameters);
+        }
+
+        public string UpdateSql(Expression<Func<TEntity, TEntity>> expression, IQueryParameters parameters)
+        {
+            _queryBody.SetUpdate(expression);
+            return _sqlBuilder.BuildUpdateSql(parameters);
+        }
+
+        public string UpdateNotUseParameters(Expression<Func<TEntity, TEntity>> expression)
+        {
+            _queryBody.SetUpdate(expression);
+            return _sqlBuilder.BuildUpdateSqlNotUseParameters();
+        }
+
+        public string UpdateSql(string updateSql)
+        {
+            _queryBody.SetUpdate(updateSql);
+            return _sqlBuilder.BuildUpdateSql(out _);
+        }
+
+        public string UpdateSql(string updateSql, out IQueryParameters parameters)
+        {
+            _queryBody.SetUpdate(updateSql);
+            return _sqlBuilder.BuildUpdateSql(out parameters);
+        }
+
+        public string UpdateSql(string updateSql, IQueryParameters parameters)
+        {
+            _queryBody.SetUpdate(updateSql);
+            return _sqlBuilder.BuildUpdateSql(parameters);
+        }
+
+        public string UpdateNotUseParameters(string updateSql)
+        {
+            _queryBody.SetUpdate(updateSql);
+            return _sqlBuilder.BuildUpdateSqlNotUseParameters();
+        }
+
+        #endregion
+
+        #region ==删除==
+
+        public Task Delete()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<int> DeleteWithAffectedRowsNumber()
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion
+
+        #region ==软删除==
+
+        public Task<bool> SoftDelete()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<int> SoftDeleteWithAffectedRowsNumber()
+        {
+            throw new NotImplementedException();
         }
 
         #endregion

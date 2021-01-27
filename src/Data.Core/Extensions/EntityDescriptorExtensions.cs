@@ -54,6 +54,18 @@ namespace Mkh.Data.Core.Extensions
         }
 
         /// <summary>
+        /// 获取修改人属性对应字段名称
+        /// </summary>
+        /// <returns></returns>
+        public static string GetModifierColumnName(this IEntityDescriptor descriptor)
+        {
+            if (descriptor.IsEntityBase)
+                return GetColumnNameByPropertyName(descriptor, "Modifier");
+
+            return string.Empty;
+        }
+
+        /// <summary>
         /// 获取修改时间属性对应字段名称
         /// </summary>
         /// <returns></returns>
