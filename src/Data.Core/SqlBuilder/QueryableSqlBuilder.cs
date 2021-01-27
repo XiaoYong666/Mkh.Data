@@ -384,12 +384,24 @@ namespace Mkh.Data.Core.SqlBuilder
             var descriptor = _queryBody.Joins.First().EntityDescriptor;
             if (descriptor.IsEntityBase)
             {
-                var p1 = parameters.Add(_dbContext.AccountResolver.AccountId);
-                sqlBuilder.AppendFormat(",{0} = @{1}", _dbAdapter.AppendQuote(descriptor.GetModifiedByColumnName()), p1);
-                var p2 = parameters.Add(_dbContext.AccountResolver.AccountName);
-                sqlBuilder.AppendFormat(",{0} = @{1}", _dbAdapter.AppendQuote(descriptor.GetModifierColumnName()), p2);
-                var p3 = parameters.Add(DateTime.Now);
-                sqlBuilder.AppendFormat(",{0} = @{1}", _dbAdapter.AppendQuote(descriptor.GetModifiedTimeColumnName()), p3);
+                if (_useParameters)
+                {
+                    var p1 = parameters.Add(_dbContext.AccountResolver.AccountId);
+                    sqlBuilder.AppendFormat(",{0} = @{1}", _dbAdapter.AppendQuote(descriptor.GetModifiedByColumnName()), p1);
+                    var p2 = parameters.Add(_dbContext.AccountResolver.AccountName);
+                    sqlBuilder.AppendFormat(",{0} = @{1}", _dbAdapter.AppendQuote(descriptor.GetModifierColumnName()), p2);
+                    var p3 = parameters.Add(DateTime.Now);
+                    sqlBuilder.AppendFormat(",{0} = @{1}", _dbAdapter.AppendQuote(descriptor.GetModifiedTimeColumnName()), p3);
+                }
+                else
+                {
+                    sqlBuilder.AppendFormat(",{0} = ", _dbAdapter.AppendQuote(descriptor.GetModifiedByColumnName()));
+                    AppendValue(_dbContext.AccountResolver.AccountId, sqlBuilder, parameters);
+                    sqlBuilder.AppendFormat(",{0} = ", _dbAdapter.AppendQuote(descriptor.GetModifierColumnName()));
+                    AppendValue(_dbContext.AccountResolver.AccountName, sqlBuilder, parameters);
+                    sqlBuilder.AppendFormat(",{0} = ", _dbAdapter.AppendQuote(descriptor.GetModifiedTimeColumnName()));
+                    AppendValue(DateTime.Now, sqlBuilder, parameters);
+                }
             }
         }
 
@@ -1755,7 +1767,7 @@ namespace Mkh.Data.Core.SqlBuilder
                     type = Nullable.GetUnderlyingType(type);
                 }
 
-                if (type.IsEnum)
+                if (type!.IsEnum)
                 {
                     sqlBuilder.AppendFormat("{0}", value.ToInt());
                 }
@@ -1767,9 +1779,13 @@ namespace Mkh.Data.Core.SqlBuilder
                 {
                     sqlBuilder.AppendFormat("'{0:yyyy-MM-dd HH:mm:ss}'", value);
                 }
-                else
+                else if (type.IsString())
                 {
                     sqlBuilder.AppendFormat("'{0}'", value);
+                }
+                else
+                {
+                    sqlBuilder.AppendFormat("{0}", value);
                 }
             }
         }

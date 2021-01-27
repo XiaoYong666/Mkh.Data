@@ -5,6 +5,7 @@ using Data.Common.Test.Domain.Article;
 using Microsoft.Extensions.DependencyInjection;
 using Mkh.Data.Abstractions.Extensions;
 using Mkh.Data.Abstractions.Pagination;
+using Mkh.Data.Abstractions.Queryable;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -105,6 +106,18 @@ namespace Data.Adapter.MySql.Test
             result = await _repository.Find(m => m.Id > 10).Update(m => new ArticleEntity { Title = "条件更新" });
 
             Assert.True(result);
+
+            var sql = _repository.Find(m => m.Id > 10).UpdateSql(m => new ArticleEntity { Title = "条件更新" });
+            /*
+             * UPDATE `Article` SET `Title` = '条件更新',`ModifiedBy` = @P1,`Modifier` = @P2,
+             * `ModifiedTime` = @P3 WHERE `Id` > '10' AND `Deleted` = 0;
+             */
+
+            sql = _repository.Find(m => m.Id > 10).UpdateNotUseParameters(m => new ArticleEntity { Title = "条件更新" });
+            /*
+             * UPDATE `Article` SET `Title` = '条件更新',`ModifiedBy` = '49f08cfd-8e0d-771b-a2f3-2639a62ca2fa',
+             * `Modifier` = 'OLDLI',`ModifiedTime` = '2021-01-28 00:17:42' WHERE `Id` > '10' AND `Deleted` = 0;
+             */
         }
 
         [Fact]
@@ -205,6 +218,26 @@ namespace Data.Adapter.MySql.Test
             list = await _repository.Find(m => ids.NotContains(m.Id)).List();
             Assert.Equal(7, list.Count);
             Assert.Equal("test1", list[0].Title);
+
+            var sql = _repository.Find(m => m.Id > 10).ListSql(out IQueryParameters parameters);
+            /*
+             * SELECT `Id` AS `Id`,`CategoryId` AS `CategoryId`,`Title` AS `Title`,`Content` AS `Content`,
+             * `IsPublished` AS `Published`,`PublishedTime` AS `PublishedTime`,`Deleted` AS `Deleted`,
+             * `DeletedBy` AS `DeletedBy`,`Deleter` AS `Deleter`,`DeletedTime` AS `DeletedTime`,
+             * `CreatedBy` AS `CreatedBy`,`Creator` AS `Creator`,`CreatedTime` AS `CreatedTime`,
+             * `ModifiedBy` AS `ModifiedBy`,`Modifier` AS `Modifier`,`ModifiedTime` AS `ModifiedTime`
+             * FROM `Article` WHERE `Id` > @P1 AND `Deleted` = 0
+             */
+
+            sql = _repository.Find(m => m.Id > 10).ListSqlNotUseParameters();
+            /*
+             * SELECT `Id` AS `Id`,`CategoryId` AS `CategoryId`,`Title` AS `Title`,`Content` AS `Content`,
+             * `IsPublished` AS `Published`,`PublishedTime` AS `PublishedTime`,`Deleted` AS `Deleted`,
+             * `DeletedBy` AS `DeletedBy`,`Deleter` AS `Deleter`,`DeletedTime` AS `DeletedTime`,
+             * `CreatedBy` AS `CreatedBy`,`Creator` AS `Creator`,`CreatedTime` AS `CreatedTime`,
+             * `ModifiedBy` AS `ModifiedBy`,`Modifier` AS `Modifier`,`ModifiedTime` AS `ModifiedTime`
+             * FROM `Article` WHERE `Id` > 10 AND `Deleted` = 0
+             */
         }
 
         [Fact]
