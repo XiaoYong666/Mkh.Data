@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using Mkh.Data.Abstractions;
 using Mkh.Data.Abstractions.Adapter;
 using Mkh.Data.Abstractions.Descriptors;
+using Mkh.Data.Abstractions.Entities;
 using Mkh.Data.Abstractions.Pagination;
 
 #if DEBUG
@@ -60,7 +61,7 @@ namespace Mkh.Data.Core.Queryable.Internal
         /// <summary>
         /// 分组信息
         /// </summary>
-        public List<QueryGroupBy> GroupBys { get; set; }
+        public List<QueryGroupBy> GroupBys { get; } = new List<QueryGroupBy>();
 
         /// <summary>
         /// 跳过行数
@@ -331,5 +332,52 @@ namespace Mkh.Data.Core.Queryable.Internal
         #endregion
 
         #endregion
+
+        #region ==Copy==
+
+        public QueryBody Copy()
+        {
+            var copy = new QueryBody(Repository)
+            {
+                FilterDeleted = FilterDeleted,
+                FilterTenant = FilterTenant,
+                IsGroupBy = IsGroupBy,
+                Skip = Skip,
+                Take = Take
+            };
+
+            copy.Joins.AddRange(Joins);
+
+            copy.Wheres.AddRange(Wheres);
+
+            copy.Sorts.AddRange(Sorts);
+
+            copy.GroupBys.AddRange(GroupBys);
+
+            copy.Update.Lambda = Update.Lambda;
+            copy.Update.Sql = Update.Sql;
+            copy.Update.Mode = Update.Mode;
+
+            copy.Select.Sql = Select.Sql;
+            copy.Select.FunctionName = Select.FunctionName;
+            copy.Select.Exclude = Select.Exclude;
+            copy.Select.FunctionExpression = Select.FunctionExpression;
+            copy.Select.Include = Select.Include;
+            copy.Select.Mode = Select.Mode;
+
+            return copy;
+        }
+
+        #endregion
+
+        /// <summary>
+        /// 获取实体描述符
+        /// </summary>
+        /// <typeparam name="TEntity"></typeparam>
+        /// <returns></returns>
+        public IEntityDescriptor GetEntityDescriptor<TEntity>() where TEntity : IEntity
+        {
+            return Repository.DbContext.EntityDescriptors.First(m => m.EntityType == typeof(TEntity));
+        }
     }
 }

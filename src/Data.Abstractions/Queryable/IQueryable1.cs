@@ -304,6 +304,18 @@ namespace Mkh.Data.Abstractions.Queryable
 
         #endregion
 
+        #region ==Limit==
+
+        /// <summary>
+        /// 限制
+        /// </summary>
+        /// <param name="skip">跳过前几条数据</param>
+        /// <param name="take">取前几条数据</param>
+        /// <returns></returns>
+        IQueryable<TEntity> Limit(int skip, int take);
+
+        #endregion
+
         #region ==Join==
 
         /// <summary>
@@ -424,7 +436,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// </summary>
         /// <param name="expression">更新表达式</param>
         /// <returns></returns>
-        string UpdateNotUseParameters(Expression<Func<TEntity, TEntity>> expression);
+        string UpdateSqlNotUseParameters(Expression<Func<TEntity, TEntity>> expression);
 
         /// <summary>
         /// 获取更新SQL
@@ -454,7 +466,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// </summary>
         /// <param name="updateSql">更新SQL</param>
         /// <returns></returns>
-        string UpdateNotUseParameters(string updateSql);
+        string UpdateSqlNotUseParameters(string updateSql);
 
         #endregion
 
@@ -462,10 +474,11 @@ namespace Mkh.Data.Abstractions.Queryable
 
         /// <summary>
         /// 删除
-        /// <para>即使数据不存在，也不会抛出异常，如果需要判断受影响的行数，可以使用 DeleteWithAffectedRowsNumber 方法 </para>
+        /// <para>如受影响行数大于0，则返回true，反之false</para>
+        /// <para>如果需要获取受影响的行数，可以使用 DeleteWithAffectedRowsNumber 方法 </para>
         /// </summary>
         /// <returns></returns>
-        Task Delete();
+        Task<bool> Delete();
 
         /// <summary>
         /// 删除数据并返回影响条数
@@ -473,13 +486,40 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <returns></returns>
         Task<int> DeleteWithAffectedRowsNumber();
 
+        /// <summary>
+        /// 获取删除SQL
+        /// </summary>
+        /// <returns></returns>
+        string DeleteSql();
+
+        /// <summary>
+        /// 获取删除SQL，并返回参数
+        /// </summary>
+        /// <param name="parameters">参数</param>
+        /// <returns></returns>
+        string DeleteSql(out IQueryParameters parameters);
+
+        /// <summary>
+        /// 获取删除SQL，并设置参数
+        /// </summary>
+        /// <param name="parameters">参数</param>
+        /// <returns></returns>
+        string DeleteSql(IQueryParameters parameters);
+
+        /// <summary>
+        /// 获取删除SQL，并且不使用参数化
+        /// </summary>
+        /// <returns></returns>
+        string DeleteSqlNotUseParameters();
+
         #endregion
 
         #region ==SoftDelete==
 
         /// <summary>
         /// 软删除
-        /// <para>即使数据不存在，也不会抛出异常，如果需要判断受影响的行数，可以使用 DeleteWithAffectedRowsNumber 方法 </para>
+        /// <para>如果受影响行数大于0，则返回true，反之false </para>
+        /// <para>如果需要判断受影响的行数，可以使用 SoftDeleteWithAffectedRowsNumber 方法</para>
         /// </summary>
         /// <returns></returns>
         Task<bool> SoftDelete();
@@ -489,6 +529,32 @@ namespace Mkh.Data.Abstractions.Queryable
         /// </summary>
         /// <returns></returns>
         Task<int> SoftDeleteWithAffectedRowsNumber();
+
+        /// <summary>
+        /// 获取软删除SQL
+        /// </summary>
+        /// <returns></returns>
+        string SoftDeleteSql();
+
+        /// <summary>
+        /// 获取软删除SQL，并返回参数
+        /// </summary>
+        /// <param name="parameters">参数</param>
+        /// <returns></returns>
+        string SoftDeleteSql(out IQueryParameters parameters);
+
+        /// <summary>
+        /// 获取软删除SQL，并设置参数
+        /// </summary>
+        /// <param name="parameters">参数</param>
+        /// <returns></returns>
+        string SoftDeleteSql(IQueryParameters parameters);
+
+        /// <summary>
+        /// 获取软删除SQL，并且不使用参数化
+        /// </summary>
+        /// <returns></returns>
+        string SoftDeleteSqlNotUseParameters();
 
         #endregion
 

@@ -71,6 +71,13 @@ namespace Data.Adapter.MySql.Test
             var article1 = await _repository.Get(article.Id);
 
             Assert.Null(article1);
+
+            //条件删除
+            var sql = _repository.Find(m => m.Id > 10).DeleteSql();
+            //DELETE FROM `Article`  WHERE `Id` > @P1 AND `Deleted` = 0
+
+            sql = _repository.Find(m => m.Id > 10).DeleteSqlNotUseParameters();
+            //DELETE FROM `Article`  WHERE `Id` > 10 AND `Deleted` = 0
         }
 
         [Fact]
@@ -113,7 +120,7 @@ namespace Data.Adapter.MySql.Test
              * `ModifiedTime` = @P3 WHERE `Id` > '10' AND `Deleted` = 0;
              */
 
-            sql = _repository.Find(m => m.Id > 10).UpdateNotUseParameters(m => new ArticleEntity { Title = "条件更新" });
+            sql = _repository.Find(m => m.Id > 10).UpdateSqlNotUseParameters(m => new ArticleEntity { Title = "条件更新" });
             /*
              * UPDATE `Article` SET `Title` = '条件更新',`ModifiedBy` = '49f08cfd-8e0d-771b-a2f3-2639a62ca2fa',
              * `Modifier` = 'OLDLI',`ModifiedTime` = '2021-01-28 00:17:42' WHERE `Id` > '10' AND `Deleted` = 0;
@@ -141,6 +148,13 @@ namespace Data.Adapter.MySql.Test
             var article1 = await _repository.Get(article.Id);
 
             Assert.Null(article1);
+
+            var sql = _repository.Find(m => m.Id > 0).SoftDeleteSql();
+            //UPDATE `Article` SET `Deleted` = 1,`DeletedTime` = P1,`DeletedBy` = P2 `Deleter` = P3  WHERE `Id` > @P4 AND `Deleted` = 0
+
+            sql = _repository.Find(m => m.Id > 0).SoftDeleteSqlNotUseParameters();
+            //UPDATE `Article` SET `Deleted` = 1,`DeletedTime` = '2021-01-28 13:46:48',`DeletedBy` = '49f08cfd-8e0d-771b-a2f3-2639a62ca2fa',
+            //`Deleter` = 'OLDLI' WHERE `Id` > 0 AND `Deleted` = 0
         }
 
         [Fact]
@@ -305,6 +319,21 @@ namespace Data.Adapter.MySql.Test
             var sum = await _repository.Find(m => m.Id > 5 && m.Id < 10).Sum(m => m.Id);
 
             Assert.Equal(30, sum);
+        }
+
+        [Fact]
+        public async void CopyTest()
+        {
+            await ClearAndAdd();
+
+            var query = _repository.Find(m => m.Id > 5);
+            var list =await query.List();
+            Assert.Equal(5, list.Count);
+
+
+            var query1 = query.Copy();
+            var list1 = await query1.List();
+            Assert.Equal(5, list1.Count);
         }
     }
 }

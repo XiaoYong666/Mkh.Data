@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Mkh.Data.Abstractions;
-using Mkh.Data.Abstractions.Descriptors;
 using Mkh.Data.Abstractions.Entities;
 using Mkh.Data.Abstractions.Pagination;
 using Mkh.Data.Abstractions.Queryable;
@@ -17,6 +16,11 @@ namespace Mkh.Data.Core.Queryable
         {
             _queryBody.Joins.Add(new QueryJoin(repository.EntityDescriptor, "T1", JoinType.UnKnown, null, noLock));
             _queryBody.SetWhere(expression);
+        }
+
+        private Queryable(QueryBody queryBody) : base(queryBody)
+        {
+
         }
 
         #region ==排序==
@@ -264,21 +268,31 @@ namespace Mkh.Data.Core.Queryable
 
         #endregion
 
+        #region ==限制==
+
+        public IQueryable<TEntity> Limit(int skip, int take)
+        {
+            _queryBody.SetLimit(skip, take);
+            return this;
+        }
+
+        #endregion
+
         #region ==表连接==
 
         public IQueryable<TEntity, TEntity2> LeftJoin<TEntity2>(Expression<Func<TEntity, TEntity2, bool>> onExpression, string tableName = null, bool noLock = true) where TEntity2 : IEntity, new()
         {
-            throw new NotImplementedException();
+            return new Queryable<TEntity, TEntity2>(_queryBody, JoinType.Left, onExpression, tableName, noLock);
         }
 
         public IQueryable<TEntity, TEntity2> InnerJoin<TEntity2>(Expression<Func<TEntity, TEntity2, bool>> onExpression, string tableName = null, bool noLock = true) where TEntity2 : IEntity, new()
         {
-            throw new NotImplementedException();
+            return new Queryable<TEntity, TEntity2>(_queryBody, JoinType.Inner, onExpression, tableName, noLock);
         }
 
         public IQueryable<TEntity, TEntity2> RightJoin<TEntity2>(Expression<Func<TEntity, TEntity2, bool>> onExpression, string tableName = null, bool noLock = true) where TEntity2 : IEntity, new()
         {
-            throw new NotImplementedException();
+            return new Queryable<TEntity, TEntity2>(_queryBody, JoinType.Right, onExpression, tableName, noLock);
         }
 
         #endregion
@@ -359,7 +373,7 @@ namespace Mkh.Data.Core.Queryable
             return _sqlBuilder.BuildUpdateSql(parameters);
         }
 
-        public string UpdateNotUseParameters(Expression<Func<TEntity, TEntity>> expression)
+        public string UpdateSqlNotUseParameters(Expression<Func<TEntity, TEntity>> expression)
         {
             _queryBody.SetUpdate(expression);
             return _sqlBuilder.BuildUpdateSqlNotUseParameters();
@@ -383,7 +397,7 @@ namespace Mkh.Data.Core.Queryable
             return _sqlBuilder.BuildUpdateSql(parameters);
         }
 
-        public string UpdateNotUseParameters(string updateSql)
+        public string UpdateSqlNotUseParameters(string updateSql)
         {
             _queryBody.SetUpdate(updateSql);
             return _sqlBuilder.BuildUpdateSqlNotUseParameters();
@@ -393,28 +407,72 @@ namespace Mkh.Data.Core.Queryable
 
         #region ==删除==
 
-        public Task Delete()
+        public async Task<bool> Delete()
         {
-            throw new NotImplementedException();
+            return await DeleteWithAffectedRowsNumber() > 0;
         }
 
         public Task<int> DeleteWithAffectedRowsNumber()
         {
-            throw new NotImplementedException();
+            var sql = _sqlBuilder.BuildDeleteSql(out IQueryParameters parameters);
+            _logger.Write("Delete", sql);
+            return _repository.Execute(sql, parameters.ToDynamicParameters());
+        }
+
+        public string DeleteSql()
+        {
+            return _sqlBuilder.BuildDeleteSql(out _);
+        }
+
+        public string DeleteSql(out IQueryParameters parameters)
+        {
+            return _sqlBuilder.BuildDeleteSql(out parameters);
+        }
+
+        public string DeleteSql(IQueryParameters parameters)
+        {
+            return _sqlBuilder.BuildDeleteSql(parameters);
+        }
+
+        public string DeleteSqlNotUseParameters()
+        {
+            return _sqlBuilder.BuildDeleteSqlNotUseParameters();
         }
 
         #endregion
 
         #region ==软删除==
 
-        public Task<bool> SoftDelete()
+        public async Task<bool> SoftDelete()
         {
-            throw new NotImplementedException();
+            return await SoftDeleteWithAffectedRowsNumber() > 0;
         }
 
         public Task<int> SoftDeleteWithAffectedRowsNumber()
         {
-            throw new NotImplementedException();
+            var sql = _sqlBuilder.BuildSoftDeleteSql(out IQueryParameters parameters);
+            _logger.Write("Delete", sql);
+            return _repository.Execute(sql, parameters.ToDynamicParameters());
+        }
+
+        public string SoftDeleteSql()
+        {
+            return _sqlBuilder.BuildSoftDeleteSql(out _);
+        }
+
+        public string SoftDeleteSql(out IQueryParameters parameters)
+        {
+            return _sqlBuilder.BuildSoftDeleteSql(out parameters);
+        }
+
+        public string SoftDeleteSql(IQueryParameters parameters)
+        {
+            return _sqlBuilder.BuildSoftDeleteSql(parameters);
+        }
+
+        public string SoftDeleteSqlNotUseParameters()
+        {
+            return _sqlBuilder.BuildSoftDeleteSqlNotUseParameters();
         }
 
         #endregion
@@ -451,7 +509,7 @@ namespace Mkh.Data.Core.Queryable
 
         #endregion
 
-        #region ==Function==
+        #region ==函数查询==
 
         public Task<TResult> Max<TResult>(Expression<Func<TEntity, TResult>> expression)
         {
@@ -479,7 +537,7 @@ namespace Mkh.Data.Core.Queryable
 
         public IQueryable<TEntity> Copy()
         {
-            throw new NotImplementedException();
+            return new Queryable<TEntity>(_queryBody.Copy());
         }
 
         #endregion

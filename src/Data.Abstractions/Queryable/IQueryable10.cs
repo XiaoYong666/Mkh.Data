@@ -24,16 +24,16 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <summary>
         /// 升序
         /// </summary>
-        /// <param name="colName">列名</param>
+        /// <param name="field">排序字段名称</param>
         /// <returns></returns>
-        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> OrderBy(string colName);
+        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> OrderBy(string field);
 
         /// <summary>
         /// 降序
         /// </summary>
-        /// <param name="colName">列名</param>
+        /// <param name="field">排序字段名称</param>
         /// <returns></returns>
-        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> OrderByDescending(string colName);
+        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> OrderByDescending(string field);
 
         /// <summary>
         /// 升序
@@ -51,22 +51,6 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <returns></returns>
         IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> OrderByDescending<TKey>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, TKey>> expression);
 
-        /// <summary>
-        /// 排序
-        /// </summary>
-        /// <param name="sort"></param>
-        /// <returns></returns>
-        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> OrderBy(Sort sort);
-
-        /// <summary>
-        /// 排序
-        /// </summary>
-        /// <typeparam name="TKey"></typeparam>
-        /// <param name="expression"></param>
-        /// <param name="sortType"></param>
-        /// <returns></returns>
-        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> OrderBy<TKey>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, TKey>> expression, SortType sortType);
-
         #endregion
 
         #region ==Where==
@@ -79,14 +63,14 @@ namespace Mkh.Data.Abstractions.Queryable
         IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> Where(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, bool>> expression);
 
         /// <summary>
-        /// 过滤
+        /// 附加SQL语句条件
         /// </summary>
-        /// <param name="whereSql">过滤条件</param>
+        /// <param name="whereSql">查询条件</param>
         /// <returns></returns>
         IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> Where(string whereSql);
 
         /// <summary>
-        /// 过滤
+        /// 条件为true时添加过滤
         /// </summary>
         /// <param name="condition">添加条件</param>
         /// <param name="expression">条件</param>
@@ -94,15 +78,15 @@ namespace Mkh.Data.Abstractions.Queryable
         IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> WhereIf(bool condition, Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, bool>> expression);
 
         /// <summary>
-        /// 过滤
+        /// 条件为true时添加SQL语句条件
         /// </summary>
         /// <param name="condition">添加条件</param>
-        /// <param name="whereSql">条件</param>
+        /// <param name="whereSql">查询条件</param>
         /// <returns></returns>
         IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> WhereIf(bool condition, string whereSql);
 
         /// <summary>
-        /// 过滤
+        /// 根据条件添加过滤
         /// </summary>
         /// <param name="condition"></param>
         /// <param name="ifExpression"></param>
@@ -111,7 +95,7 @@ namespace Mkh.Data.Abstractions.Queryable
         IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> WhereIfElse(bool condition, Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, bool>> ifExpression, Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, bool>> elseExpression);
 
         /// <summary>
-        /// 过滤
+        /// 根据条件添加SQL语句条件
         /// </summary>
         /// <param name="condition"></param>
         /// <param name="ifWhereSql"></param>
@@ -128,7 +112,16 @@ namespace Mkh.Data.Abstractions.Queryable
         IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> WhereNotNull(string condition, Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, bool>> expression);
 
         /// <summary>
-        /// 字符串不为Null以及空字符串的时候添加过滤
+        /// 字符串不为Null以及空字符串的时候添加ifExpression，反之添加elseExpression
+        /// </summary>
+        /// <param name="condition"></param>
+        /// <param name="ifExpression"></param>
+        /// <param name="elseExpression"></param>
+        /// <returns></returns>
+        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> WhereNotNull(string condition, Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, bool>> ifExpression, Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, bool>> elseExpression);
+
+        /// <summary>
+        /// 字符串不为Null以及空字符串的时候添加SQL语句条件
         /// </summary>
         /// <param name="condition"></param>
         /// <param name="whereSql"></param>
@@ -136,7 +129,16 @@ namespace Mkh.Data.Abstractions.Queryable
         IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> WhereNotNull(string condition, string whereSql);
 
         /// <summary>
-        /// 不为Null以及Empty的时候添加过滤
+        /// 字符串不为Null以及空字符串的时候添加ifWhereSql，反之添加elseWhereSql
+        /// </summary>
+        /// <param name="condition"></param>
+        /// <param name="ifWhereSql"></param>
+        /// <param name="elseWhereSql"></param>
+        /// <returns></returns>
+        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> WhereNotNull(string condition, string ifWhereSql, string elseWhereSql);
+
+        /// <summary>
+        /// 对象不为Null以及空字符串的时候添加SQL语句条件
         /// </summary>
         /// <param name="condition"></param>
         /// <param name="expression"></param>
@@ -144,12 +146,30 @@ namespace Mkh.Data.Abstractions.Queryable
         IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> WhereNotNull(object condition, Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, bool>> expression);
 
         /// <summary>
-        /// 不为Null以及Empty的时候添加过滤
+        /// 对象不为Null的时候添加ifExpression，反之添加elseExpression
+        /// </summary>
+        /// <param name="condition"></param>
+        /// <param name="ifExpression"></param>
+        /// <param name="elseExpression"></param>
+        /// <returns></returns>
+        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> WhereNotNull(object condition, Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, bool>> ifExpression, Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, bool>> elseExpression);
+
+        /// <summary>
+        /// 对象不为Null以及空字符串的时候添加SQL语句条件
         /// </summary>
         /// <param name="condition"></param>
         /// <param name="whereSql"></param>
         /// <returns></returns>
         IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> WhereNotNull(object condition, string whereSql);
+
+        /// <summary>
+        /// 对象不为Null的时候添加ifWhereSql，反之添加elseWhereSql
+        /// </summary>
+        /// <param name="condition"></param>
+        /// <param name="ifWhereSql"></param>
+        /// <param name="elseWhereSql"></param>
+        /// <returns></returns>
+        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> WhereNotNull(object condition, string ifWhereSql, string elseWhereSql);
 
         /// <summary>
         /// GUID不为空的时候添加过滤条件
@@ -160,7 +180,7 @@ namespace Mkh.Data.Abstractions.Queryable
         IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> WhereNotEmpty(Guid condition, Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, bool>> expression);
 
         /// <summary>
-        /// GUID不为空的时候添加过滤条件
+        /// GUID不为空的时候添加过滤SQL语句条件
         /// </summary>
         /// <param name="condition"></param>
         /// <param name="whereSql"></param>
@@ -168,13 +188,22 @@ namespace Mkh.Data.Abstractions.Queryable
         IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> WhereNotEmpty(Guid condition, string whereSql);
 
         /// <summary>
-        /// NotIn查询
+        /// GUID不为空的时候添加ifExpression，反之添加elseExpression
         /// </summary>
-        /// <typeparam name="TKey"></typeparam>
-        /// <param name="key"></param>
-        /// <param name="list"></param>
+        /// <param name="condition"></param>
+        /// <param name="ifExpression"></param>
+        /// <param name="elseExpression"></param>
         /// <returns></returns>
-        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> WhereNotIn<TKey>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, TKey>> key, IEnumerable<TKey> list);
+        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> WhereNotEmpty(Guid condition, Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, bool>> ifExpression, Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, bool>> elseExpression);
+
+        /// <summary>
+        /// GUID不为空的时候添加ifExpression，反之添加elseExpression
+        /// </summary>
+        /// <param name="condition"></param>
+        /// <param name="ifWhereSql"></param>
+        /// <param name="elseWhereSql"></param>
+        /// <returns></returns>
+        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> WhereNotEmpty(Guid condition, string ifWhereSql, string elseWhereSql);
 
         #endregion
 
@@ -187,7 +216,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <param name="key">列</param>
         /// <param name="queryable">子查询的查询构造器</param>
         /// <returns></returns>
-        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> SubQueryEqual<TKey>(Expression<Func<TEntity, TKey>> key, IQueryable queryable);
+        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> SubQueryEqual<TKey>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, TKey>> key, IQueryable queryable);
 
         /// <summary>
         /// 子查询不等于
@@ -196,7 +225,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <param name="key">列</param>
         /// <param name="queryable">子查询的查询构造器</param>
         /// <returns></returns>
-        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> SubQueryNotEqual<TKey>(Expression<Func<TEntity, TKey>> key, IQueryable queryable);
+        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> SubQueryNotEqual<TKey>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, TKey>> key, IQueryable queryable);
 
         /// <summary>
         /// 子查询大于
@@ -205,7 +234,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <param name="key">列</param>
         /// <param name="queryable">子查询的查询构造器</param>
         /// <returns></returns>
-        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> SubQueryGreaterThan<TKey>(Expression<Func<TEntity, TKey>> key, IQueryable queryable);
+        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> SubQueryGreaterThan<TKey>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, TKey>> key, IQueryable queryable);
 
         /// <summary>
         /// 子查询大于等于
@@ -214,7 +243,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <param name="key">列</param>
         /// <param name="queryable">子查询的查询构造器</param>
         /// <returns></returns>
-        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> SubQueryGreaterThanOrEqual<TKey>(Expression<Func<TEntity, TKey>> key, IQueryable queryable);
+        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> SubQueryGreaterThanOrEqual<TKey>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, TKey>> key, IQueryable queryable);
 
         /// <summary>
         /// 子查询小于
@@ -223,7 +252,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <param name="key">列</param>
         /// <param name="queryable">子查询的查询构造器</param>
         /// <returns></returns>
-        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> SubQueryLessThan<TKey>(Expression<Func<TEntity, TKey>> key, IQueryable queryable);
+        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> SubQueryLessThan<TKey>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, TKey>> key, IQueryable queryable);
 
         /// <summary>
         /// 子查询小于等于
@@ -232,7 +261,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <param name="key">列</param>
         /// <param name="queryable">子查询的查询构造器</param>
         /// <returns></returns>
-        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> SubQueryLessThanOrEqual<TKey>(Expression<Func<TEntity, TKey>> key, IQueryable queryable);
+        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> SubQueryLessThanOrEqual<TKey>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, TKey>> key, IQueryable queryable);
 
         /// <summary>
         /// 子查询包含
@@ -241,7 +270,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <param name="key">列</param>
         /// <param name="queryable">子查询的查询构造器</param>
         /// <returns></returns>
-        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> SubQueryIn<TKey>(Expression<Func<TEntity, TKey>> key, IQueryable queryable);
+        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> SubQueryIn<TKey>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, TKey>> key, IQueryable queryable);
 
         /// <summary>
         /// 子查询不包含
@@ -250,7 +279,35 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <param name="key">列</param>
         /// <param name="queryable">子查询的查询构造器</param>
         /// <returns></returns>
-        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> SubQueryNotIn<TKey>(Expression<Func<TEntity, TKey>> key, IQueryable queryable);
+        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> SubQueryNotIn<TKey>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, TKey>> key, IQueryable queryable);
+
+        #endregion
+
+        #region ==Select==
+
+        /// <summary>
+        /// 查询返回指定列
+        /// </summary>
+        /// <typeparam name="TResult"></typeparam>
+        /// <param name="expression">返回的列</param>
+        /// <returns></returns>
+        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> Select<TResult>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, TResult>> expression);
+
+        /// <summary>
+        /// 查询返回指定列
+        /// </summary>
+        /// <typeparam name="TResult"></typeparam>
+        /// <param name="sql">SELECT后面的SQL语句，一般用于需要自定义的情况</param>
+        /// <returns></returns>
+        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> Select<TResult>(string sql);
+
+        /// <summary>
+        /// 查询排除指定列
+        /// </summary>
+        /// <typeparam name="TResult"></typeparam>
+        /// <param name="expression"></param>
+        /// <returns></returns>
+        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> SelectExclude<TResult>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, TResult>> expression);
 
         #endregion
 
@@ -266,24 +323,6 @@ namespace Mkh.Data.Abstractions.Queryable
 
         #endregion
 
-        #region ==Select==
-
-        /// <summary>
-        /// 查询指定列
-        /// </summary>
-        /// <returns></returns>
-        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> Select<TResult>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, TResult>> selectExpression);
-
-        /// <summary>
-        /// 查询排除指定列
-        /// </summary>
-        /// <typeparam name="TResult"></typeparam>
-        /// <param name="expression"></param>
-        /// <returns></returns>
-        IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10> SelectExclude<TResult>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, TResult>> expression);
-
-        #endregion
-
         #region ==Join==
 
         /// <summary>
@@ -291,7 +330,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// </summary>
         /// <typeparam name="TEntity11"></typeparam>
         /// <param name="onExpression"></param>
-        /// <param name="tableName"></param>
+        /// <param name="tableName">自定义表名</param>
         /// <param name="noLock">针对SqlServer的NoLock特性，默认开启</param>
         /// <returns></returns>
         IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, TEntity11> LeftJoin<TEntity11>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, TEntity11, bool>> onExpression, string tableName = null, bool noLock = true) where TEntity11 : IEntity, new();
@@ -301,7 +340,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// </summary>
         /// <typeparam name="TEntity11"></typeparam>
         /// <param name="onExpression"></param>
-        /// <param name="tableName"></param>
+        /// <param name="tableName">自定义表名</param>
         /// <param name="noLock">针对SqlServer的NoLock特性，默认开启</param>
         /// <returns></returns>
         IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, TEntity11> InnerJoin<TEntity11>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, TEntity11, bool>> onExpression, string tableName = null, bool noLock = true) where TEntity11 : IEntity, new();
@@ -311,7 +350,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// </summary>
         /// <typeparam name="TEntity11"></typeparam>
         /// <param name="onExpression"></param>
-        /// <param name="tableName"></param>
+        /// <param name="tableName">自定义表名</param>
         /// <param name="noLock">针对SqlServer的NoLock特性，默认开启</param>
         /// <returns></returns>
         IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, TEntity11> RightJoin<TEntity11>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TEntity6, TEntity7, TEntity8, TEntity9, TEntity10, TEntity11, bool>> onExpression, string tableName = null, bool noLock = true) where TEntity11 : IEntity, new();
@@ -352,36 +391,6 @@ namespace Mkh.Data.Abstractions.Queryable
         /// </summary>
         /// <returns></returns>
         Task<TEntity> First();
-
-        #endregion
-
-        #region ==Update==
-
-        /// <summary>
-        /// 更新
-        /// <para>数据不存在也是返回true</para>
-        /// </summary>
-        /// <param name="expression"></param>
-        /// <returns></returns>
-        Task<bool> Update(Expression<Func<TEntity, TEntity>> expression);
-
-        /// <summary>
-        /// 更新
-        /// <para>数据不存在也是返回true</para>
-        /// </summary>
-        /// <param name="updateSql">手写更新sql</param>
-        /// <param name="parameterObject">参数对象</param>
-        /// <returns></returns>
-        Task<bool> Update(string updateSql, object parameterObject = null);
-
-        /// <summary>
-        /// 更新数据返回影响条数
-        /// </summary>
-        /// <param name="expression"></param>
-        /// <param name="updateSql">更新SQL语句，优于表达式</param>
-        /// <param name="parameterObject">参数对象</param>
-        /// <returns></returns>
-        Task<int> UpdateWithAffectedNum(Expression<Func<TEntity, TEntity>> expression, string updateSql = null, object parameterObject = null);
 
         #endregion
 

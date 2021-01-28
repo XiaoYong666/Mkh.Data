@@ -257,7 +257,7 @@ namespace Data.Adapter.MySql.Test
             builder.QueryBody.SetSelect(exp5);
             sql = builder.ResolveSelect();
 
-            Assert.Equal("T1.`Title` AS `Title`,T2.`Id` AS `Id`,T2.`Name` AS `Name`,T2.`Deleted` AS `Deleted`,T2.`DeletedBy` AS `DeletedBy`,T2.`Deleter` AS `Deleter`,T2.`DeletedTime` AS `DeletedTime`,T2.`CreatedBy` AS `CreatedBy`,T2.`Creator` AS `Creator`,T2.`CreatedTime` AS `CreatedTime`,T2.`ModifiedBy` AS `ModifiedBy`,T2.`Modifier` AS `Modifier`,T2.`ModifiedTime` AS `ModifiedTime`", sql);
+            Assert.Equal("T1.`Title` AS `Title`,T2.`Id` AS `Id`,T2.`Name` AS `Name`,T2.`CreatedBy` AS `CreatedBy`,T2.`Creator` AS `Creator`,T2.`CreatedTime` AS `CreatedTime`,T2.`ModifiedBy` AS `ModifiedBy`,T2.`Modifier` AS `Modifier`,T2.`ModifiedTime` AS `ModifiedTime`", sql);
 
             Expression<Func<ArticleEntity, CategoryEntity, dynamic>> exp6 = (m, n) => new { m.Title, Name = n.Name.Substring(3, 2) };
 
@@ -274,7 +274,7 @@ namespace Data.Adapter.MySql.Test
             builder.QueryBody.SetSelectExclude(exp8);
             sql = builder.ResolveSelect();
 
-            Assert.Equal("T1.`Id` AS `Id`,T2.`Id` AS `Id`,T2.`Deleted` AS `Deleted`,T2.`DeletedBy` AS `DeletedBy`,T2.`Deleter` AS `Deleter`,T2.`DeletedTime` AS `DeletedTime`,T2.`CreatedBy` AS `CreatedBy`,T2.`Creator` AS `Creator`,T2.`CreatedTime` AS `CreatedTime`,T2.`ModifiedBy` AS `ModifiedBy`,T2.`Modifier` AS `Modifier`,T2.`ModifiedTime` AS `ModifiedTime`", sql);
+            Assert.Equal("T1.`Id` AS `Id`,T2.`Id` AS `Id`,T2.`CreatedBy` AS `CreatedBy`,T2.`Creator` AS `Creator`,T2.`CreatedTime` AS `CreatedTime`,T2.`ModifiedBy` AS `ModifiedBy`,T2.`Modifier` AS `Modifier`,T2.`ModifiedTime` AS `ModifiedTime`", sql);
         }
 
         #endregion
@@ -344,7 +344,7 @@ namespace Data.Adapter.MySql.Test
             builder.ResolveFrom(sqlBuilder, parameters);
             var sql = sqlBuilder.ToString();
 
-            Assert.Equal("`Article` AS T1 INNER JOIN `MyCategory` AS T2 ON T1.`CategoryId` = T2.`Id` AND T2.`Deleted` = 0", sql);
+            Assert.Equal("`Article` AS T1 INNER JOIN `MyCategory` AS T2 ON T1.`CategoryId` = T2.`Id`", sql);
         }
 
         #endregion

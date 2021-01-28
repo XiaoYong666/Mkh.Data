@@ -356,7 +356,7 @@ namespace Mkh.Data.Core.SqlBuilder
             SetUpdateInfo(sqlBuilder, parameters);
 
             var whereSql = ResolveWhere(parameters);
-            Check.NotNull(whereSql, nameof(whereSql), "批量更新必须指定条件");
+            Check.NotNull(whereSql, nameof(whereSql), "批量更新必须指定条件，防止人为失误误操作");
             sqlBuilder.AppendFormat(" {0};", whereSql);
 
             return sqlBuilder.ToString();
@@ -403,6 +403,116 @@ namespace Mkh.Data.Core.SqlBuilder
                     AppendValue(DateTime.Now, sqlBuilder, parameters);
                 }
             }
+        }
+
+        #endregion
+
+        #region ==BuildDeleteSql==
+
+        /// <summary>
+        /// 生成删除SQL
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        public string BuildDeleteSql(out IQueryParameters parameters)
+        {
+            parameters = new QueryParameters();
+            return BuildDeleteSql(parameters);
+        }
+
+        /// <summary>
+        /// 生成删除SQL
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        public string BuildDeleteSql(IQueryParameters parameters)
+        {
+            var tableName = _queryBody.Joins.First().TableName;
+            Check.NotNull(tableName, nameof(tableName), "未指定更新表");
+
+            var sqlBuilder = new StringBuilder();
+
+            sqlBuilder.AppendFormat("DELETE FROM {0} ", _dbAdapter.AppendQuote(tableName));
+
+            var whereSql = ResolveWhere(parameters);
+            Check.NotNull(whereSql, nameof(whereSql), "生成条件sql异常，删除必须指定条件，防止误操作");
+            sqlBuilder.AppendFormat(" {0}", whereSql);
+
+            return sqlBuilder.ToString();
+        }
+
+        /// <summary>
+        /// 生成删除SQL，并且不使用参数化
+        /// </summary>
+        /// <returns></returns>
+        public string BuildDeleteSqlNotUseParameters()
+        {
+            _useParameters = false;
+            var sql = BuildDeleteSql(out _);
+            _useParameters = true;
+            return sql;
+        }
+
+        #endregion
+
+        #region ==
+
+        /// <summary>
+        /// 生成软删除SQL
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        public string BuildSoftDeleteSql(out IQueryParameters parameters)
+        {
+            parameters = new QueryParameters();
+            return BuildSoftDeleteSql(parameters);
+        }
+
+        /// <summary>
+        /// 生成软删除SQL
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        public string BuildSoftDeleteSql(IQueryParameters parameters)
+        {
+            var entityDescriptor = _queryBody.Joins.First().EntityDescriptor;
+            if (!entityDescriptor.IsSoftDelete)
+                throw new Exception("当前实体未实现软删除功能，无法调用该方法");
+
+            var tableName = _queryBody.Joins.First().TableName;
+            Check.NotNull(tableName, nameof(tableName), "未指定更新表");
+
+            var deletedColumnName = entityDescriptor.GetDeletedColumnName();
+            var deletedTimeColumnName = entityDescriptor.GetDeletedTimeColumnName();
+            var deletedByColumnName = entityDescriptor.GetDeletedByColumnName();
+            var deleterColumnName = entityDescriptor.GetDeleterColumnName();
+
+            var sqlBuilder = new StringBuilder($"UPDATE {_dbAdapter.AppendQuote(tableName)} SET ");
+            sqlBuilder.AppendFormat("{0} = {1},", _dbAdapter.AppendQuote(deletedColumnName), _dbAdapter.BooleanTrueValue);
+            sqlBuilder.AppendFormat("{0} = ", _dbAdapter.AppendQuote(deletedTimeColumnName));
+            AppendValue(DateTime.Now, sqlBuilder, parameters);
+            sqlBuilder.AppendFormat(",{0} = ", _dbAdapter.AppendQuote(deletedByColumnName));
+            AppendValue(_dbContext.AccountResolver.AccountId, sqlBuilder, parameters);
+            sqlBuilder.AppendFormat(",{0} = ", _dbAdapter.AppendQuote(deleterColumnName));
+            AppendValue(_dbContext.AccountResolver.AccountName, sqlBuilder, parameters);
+
+            var whereSql = ResolveWhere(parameters);
+            Check.NotNull(whereSql, nameof(whereSql), "生成条件sql异常");
+            sqlBuilder.AppendFormat(" {0}", whereSql);
+
+            return sqlBuilder.ToString();
+        }
+
+        /// <summary>
+        /// 生成软删除SQL，并且不使用参数化
+        /// </summary>
+        /// <returns></returns>
+        public string BuildSoftDeleteSqlNotUseParameters()
+        {
+            _useParameters = false;
+            var sql = BuildSoftDeleteSql(out _);
+            _useParameters = true;
+            return sql;
         }
 
         #endregion
@@ -1779,7 +1889,7 @@ namespace Mkh.Data.Core.SqlBuilder
                 {
                     sqlBuilder.AppendFormat("'{0:yyyy-MM-dd HH:mm:ss}'", value);
                 }
-                else if (type.IsString())
+                else if (type.IsString() || type.IsGuid())
                 {
                     sqlBuilder.AppendFormat("'{0}'", value);
                 }

@@ -28,6 +28,14 @@ namespace Mkh.Data.Core.Queryable
             _sqlBuilder = new QueryableSqlBuilder(_queryBody);
         }
 
+        protected QueryableAbstract(QueryBody queryBody)
+        {
+            _queryBody = queryBody;
+            _repository = queryBody.Repository;
+            _sqlBuilder = new QueryableSqlBuilder(_queryBody);
+            _logger = _repository.DbContext.Logger;
+        }
+
         #region ==List==
 
         public Task<IList<dynamic>> ListDynamic()
@@ -286,7 +294,7 @@ namespace Mkh.Data.Core.Queryable
         #endregion
 
         #region ==Min==
-        
+
         protected Task<TResult> Min<TResult>(LambdaExpression expression)
         {
             return ExecuteFunction<TResult>("Min", expression);

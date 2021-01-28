@@ -42,6 +42,18 @@ namespace Mkh.Data.Core.Extensions
         }
 
         /// <summary>
+        /// 获取删除人名称属性对应字段名称
+        /// </summary>
+        /// <returns></returns>
+        public static string GetDeleterColumnName(this IEntityDescriptor descriptor)
+        {
+            if (descriptor.IsSoftDelete)
+                return GetColumnNameByPropertyName(descriptor, "Deleter");
+
+            return string.Empty;
+        }
+
+        /// <summary>
         /// 获取修改人属性对应字段名称
         /// </summary>
         /// <returns></returns>
