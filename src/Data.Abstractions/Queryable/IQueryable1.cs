@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Mkh.Data.Abstractions.Entities;
 using Mkh.Data.Abstractions.Pagination;
+using Mkh.Data.Abstractions.Queryable.Grouping;
 
 namespace Mkh.Data.Abstractions.Queryable
 {
@@ -379,7 +380,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// </summary>
         /// <param name="expression"></param>
         /// <returns></returns>
-        Task<bool> Update(Expression<Func<TEntity, TEntity>> expression);
+        Task<bool> ToUpdate(Expression<Func<TEntity, TEntity>> expression);
 
         /// <summary>
         /// 更新并返回受影响的行数
@@ -387,7 +388,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// </summary>
         /// <param name="expression">更新表达式</param>
         /// <returns></returns>
-        Task<int> UpdateWithAffectedRowsNumber(Expression<Func<TEntity, TEntity>> expression);
+        Task<int> ToUpdateWithAffectedRowsNumber(Expression<Func<TEntity, TEntity>> expression);
 
         /// <summary>
         /// 更新
@@ -397,7 +398,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <param name="updateSql">原生sql</param>
         /// <param name="parameters">参数对象</param>
         /// <returns></returns>
-        Task<bool> Update(string updateSql, Dictionary<string, object> parameters = null);
+        Task<bool> ToUpdate(string updateSql, Dictionary<string, object> parameters = null);
 
         /// <summary>
         /// 更新并返回受影响的行数
@@ -406,14 +407,14 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <param name="updateSql">原生sql</param>
         /// <param name="parameters">参数集合</param>
         /// <returns></returns>
-        Task<int> UpdateWithAffectedRowsNumber(string updateSql, Dictionary<string, object> parameters = null);
+        Task<int> ToUpdateWithAffectedRowsNumber(string updateSql, Dictionary<string, object> parameters = null);
 
         /// <summary>
         /// 获取更新SQL
         /// </summary>
         /// <param name="expression">更新表达式</param>
         /// <returns></returns>
-        string UpdateSql(Expression<Func<TEntity, TEntity>> expression);
+        string ToUpdateSql(Expression<Func<TEntity, TEntity>> expression);
 
         /// <summary>
         /// 获取更新SQL，并返回参数
@@ -421,7 +422,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <param name="expression">更新表达式</param>
         /// <param name="parameters">参数</param>
         /// <returns></returns>
-        string UpdateSql(Expression<Func<TEntity, TEntity>> expression, out IQueryParameters parameters);
+        string ToUpdateSql(Expression<Func<TEntity, TEntity>> expression, out IQueryParameters parameters);
 
         /// <summary>
         /// 获取更新SQL，并设置参数
@@ -429,21 +430,21 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <param name="expression">更新表达式</param>
         /// <param name="parameters">参数</param>
         /// <returns></returns>
-        string UpdateSql(Expression<Func<TEntity, TEntity>> expression, IQueryParameters parameters);
+        string ToUpdateSql(Expression<Func<TEntity, TEntity>> expression, IQueryParameters parameters);
 
         /// <summary>
         /// 获取更新SQL，并且不使用参数化
         /// </summary>
         /// <param name="expression">更新表达式</param>
         /// <returns></returns>
-        string UpdateSqlNotUseParameters(Expression<Func<TEntity, TEntity>> expression);
+        string ToUpdateSqlNotUseParameters(Expression<Func<TEntity, TEntity>> expression);
 
         /// <summary>
         /// 获取更新SQL
         /// </summary>
         /// <param name="updateSql">更新SQL</param>
         /// <returns></returns>
-        string UpdateSql(string updateSql);
+        string ToUpdateSql(string updateSql);
 
         /// <summary>
         /// 获取更新SQL，并返回参数
@@ -451,7 +452,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <param name="updateSql">更新SQL</param>
         /// <param name="parameters">参数</param>
         /// <returns></returns>
-        string UpdateSql(string updateSql, out IQueryParameters parameters);
+        string ToUpdateSql(string updateSql, out IQueryParameters parameters);
 
         /// <summary>
         /// 获取更新SQL，并设置参数
@@ -459,14 +460,14 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <param name="updateSql">更新SQL</param>
         /// <param name="parameters">参数</param>
         /// <returns></returns>
-        string UpdateSql(string updateSql, IQueryParameters parameters);
+        string ToUpdateSql(string updateSql, IQueryParameters parameters);
 
         /// <summary>
         /// 获取更新SQL，并且不使用参数化
         /// </summary>
         /// <param name="updateSql">更新SQL</param>
         /// <returns></returns>
-        string UpdateSqlNotUseParameters(string updateSql);
+        string ToUpdateSqlNotUseParameters(string updateSql);
 
         #endregion
 
@@ -478,39 +479,39 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <para>如果需要获取受影响的行数，可以使用 DeleteWithAffectedRowsNumber 方法 </para>
         /// </summary>
         /// <returns></returns>
-        Task<bool> Delete();
+        Task<bool> ToDelete();
 
         /// <summary>
         /// 删除数据并返回影响条数
         /// </summary>
         /// <returns></returns>
-        Task<int> DeleteWithAffectedRowsNumber();
+        Task<int> ToDeleteWithAffectedRowsNumber();
 
         /// <summary>
         /// 获取删除SQL
         /// </summary>
         /// <returns></returns>
-        string DeleteSql();
+        string ToDeleteSql();
 
         /// <summary>
         /// 获取删除SQL，并返回参数
         /// </summary>
         /// <param name="parameters">参数</param>
         /// <returns></returns>
-        string DeleteSql(out IQueryParameters parameters);
+        string ToDeleteSql(out IQueryParameters parameters);
 
         /// <summary>
         /// 获取删除SQL，并设置参数
         /// </summary>
         /// <param name="parameters">参数</param>
         /// <returns></returns>
-        string DeleteSql(IQueryParameters parameters);
+        string ToDeleteSql(IQueryParameters parameters);
 
         /// <summary>
         /// 获取删除SQL，并且不使用参数化
         /// </summary>
         /// <returns></returns>
-        string DeleteSqlNotUseParameters();
+        string ToDeleteSqlNotUseParameters();
 
         #endregion
 
@@ -522,39 +523,39 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <para>如果需要判断受影响的行数，可以使用 SoftDeleteWithAffectedRowsNumber 方法</para>
         /// </summary>
         /// <returns></returns>
-        Task<bool> SoftDelete();
+        Task<bool> ToSoftDelete();
 
         /// <summary>
         /// 软删除并返回影响条数
         /// </summary>
         /// <returns></returns>
-        Task<int> SoftDeleteWithAffectedRowsNumber();
+        Task<int> ToSoftDeleteWithAffectedRowsNumber();
 
         /// <summary>
         /// 获取软删除SQL
         /// </summary>
         /// <returns></returns>
-        string SoftDeleteSql();
+        string ToSoftDeleteSql();
 
         /// <summary>
         /// 获取软删除SQL，并返回参数
         /// </summary>
         /// <param name="parameters">参数</param>
         /// <returns></returns>
-        string SoftDeleteSql(out IQueryParameters parameters);
+        string ToSoftDeleteSql(out IQueryParameters parameters);
 
         /// <summary>
         /// 获取软删除SQL，并设置参数
         /// </summary>
         /// <param name="parameters">参数</param>
         /// <returns></returns>
-        string SoftDeleteSql(IQueryParameters parameters);
+        string ToSoftDeleteSql(IQueryParameters parameters);
 
         /// <summary>
         /// 获取软删除SQL，并且不使用参数化
         /// </summary>
         /// <returns></returns>
-        string SoftDeleteSqlNotUseParameters();
+        string ToSoftDeleteSqlNotUseParameters();
 
         #endregion
 
@@ -564,7 +565,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// 查询列表，返回指定类型
         /// </summary>
         /// <returns></returns>
-        Task<IList<TEntity>> List();
+        Task<IList<TEntity>> ToList();
 
         #endregion
 
@@ -574,14 +575,14 @@ namespace Mkh.Data.Abstractions.Queryable
         /// 分页查询，返回实体类型
         /// </summary>
         /// <returns></returns>
-        Task<IList<TEntity>> Pagination();
+        Task<IList<TEntity>> ToPagination();
 
         /// <summary>
         /// 分页查询，返回实体类型
         /// </summary>
         /// <param name="paging">分页对象</param>
         /// <returns></returns>
-        Task<IList<TEntity>> Pagination(Paging paging);
+        Task<IList<TEntity>> ToPagination(Paging paging);
 
         #endregion
 
@@ -591,7 +592,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// 查询第一条数据，返回指定类型
         /// </summary>
         /// <returns></returns>
-        Task<TEntity> First();
+        Task<TEntity> ToFirst();
 
         #endregion
 
@@ -601,25 +602,35 @@ namespace Mkh.Data.Abstractions.Queryable
         /// 获取最大值
         /// </summary>
         /// <returns></returns>
-        Task<TResult> Max<TResult>(Expression<Func<TEntity, TResult>> expression);
+        Task<TResult> ToMax<TResult>(Expression<Func<TEntity, TResult>> expression);
 
         /// <summary>
         /// 获取最小值
         /// </summary>
         /// <returns></returns>
-        Task<TResult> Min<TResult>(Expression<Func<TEntity, TResult>> expression);
+        Task<TResult> ToMin<TResult>(Expression<Func<TEntity, TResult>> expression);
 
         /// <summary>
         /// 求和
         /// </summary>
         /// <returns></returns>
-        Task<TResult> Sum<TResult>(Expression<Func<TEntity, TResult>> expression);
+        Task<TResult> ToSum<TResult>(Expression<Func<TEntity, TResult>> expression);
 
         /// <summary>
         /// 求平均值
         /// </summary>
         /// <returns></returns>
-        Task<TResult> Avg<TResult>(Expression<Func<TEntity, TResult>> expression);
+        Task<TResult> ToAvg<TResult>(Expression<Func<TEntity, TResult>> expression);
+
+        #endregion
+
+        #region ==Grouping==
+
+        /// <summary>
+        /// 分组
+        /// </summary>
+        /// <returns></returns>
+        IGroupingQueryable<TResult, TEntity> GroupBy<TResult>(Expression<Func<TEntity, TResult>> expression);
 
         #endregion
 

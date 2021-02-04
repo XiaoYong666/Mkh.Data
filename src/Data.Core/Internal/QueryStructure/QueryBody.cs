@@ -1,19 +1,20 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-#if DEBUG
 using System.Runtime.CompilerServices;
-#endif
 using Mkh.Data.Abstractions;
 using Mkh.Data.Abstractions.Adapter;
 using Mkh.Data.Abstractions.Descriptors;
 using Mkh.Data.Abstractions.Entities;
 using Mkh.Data.Abstractions.Pagination;
+#if DEBUG
+#endif
 
 #if DEBUG
 [assembly: InternalsVisibleTo("Data.Adapter.MySql.Test")]
 #endif
-namespace Mkh.Data.Core.Queryable.Internal
+namespace Mkh.Data.Core.Internal.QueryStructure
 {
     /// <summary>
     /// 查询主体信息
@@ -33,10 +34,17 @@ namespace Mkh.Data.Core.Queryable.Internal
         /// </summary>
         public IRepository Repository { get; set; }
 
+        public IDbAdapter DbAdapter => _dbAdapter;
+
+        /// <summary>
+        /// 是否使用参数化
+        /// </summary>
+        public bool UseParameters { get; set; } = true;
+
         /// <summary>
         /// 查询的列
         /// </summary>
-        public QuerySelect Select { get; } = new QuerySelect();
+        public QuerySelect Select { get; set; }
 
         /// <summary>
         /// 表连接信息
@@ -46,22 +54,27 @@ namespace Mkh.Data.Core.Queryable.Internal
         /// <summary>
         /// 过滤条件
         /// </summary>
-        public List<QueryWhere> Wheres { get; } = new List<QueryWhere>();
+        public List<QueryWhere> Wheres { get; set; }
 
         /// <summary>
         /// 排序
         /// </summary>
-        public List<QuerySort> Sorts { get; } = new List<QuerySort>();
+        public List<QuerySort> Sorts { get; set; }
 
         /// <summary>
         /// 更新信息
         /// </summary>
-        public QueryUpdate Update { get; } = new QueryUpdate();
+        public QueryUpdate Update { get; set; }
+
+        /// <summary>
+        /// 是否分组查询
+        /// </summary>
+        public bool IsGroupBy { get; set; }
 
         /// <summary>
         /// 分组信息
         /// </summary>
-        public List<QueryGroupBy> GroupBys { get; } = new List<QueryGroupBy>();
+        public LambdaExpression GroupBy { get; set; }
 
         /// <summary>
         /// 跳过行数
@@ -84,9 +97,9 @@ namespace Mkh.Data.Core.Queryable.Internal
         public bool FilterTenant { get; set; } = true;
 
         /// <summary>
-        /// 是否分组查询
+        /// 聚合过滤
         /// </summary>
-        public bool IsGroupBy { get; set; }
+        public List<QueryHaving> Havings { get; set; }
 
         #endregion
 
@@ -114,6 +127,8 @@ namespace Mkh.Data.Core.Queryable.Internal
             if (field.IsNull())
                 return;
 
+            Sorts ??= new List<QuerySort>();
+
             Sorts.Add(new QuerySort { Mode = QuerySortMode.Sql, Sql = field, Type = sortType });
         }
 
@@ -128,6 +143,8 @@ namespace Mkh.Data.Core.Queryable.Internal
             if (expression == null)
                 return;
 
+            Sorts ??= new List<QuerySort>();
+
             Sorts.Add(new QuerySort { Mode = QuerySortMode.Lambda, Lambda = expression, Type = sortType });
         }
 
@@ -137,26 +154,32 @@ namespace Mkh.Data.Core.Queryable.Internal
 
         public void SetWhere(LambdaExpression whereExpression)
         {
-            if (whereExpression != null)
-            {
-                Wheres.Add(new QueryWhere(whereExpression));
-            }
+            if (whereExpression == null)
+                return;
+
+            Wheres ??= new List<QueryWhere>();
+
+            Wheres.Add(new QueryWhere(whereExpression));
         }
 
         public void SetWhere(string whereSql)
         {
-            if (whereSql.NotNull())
-            {
-                Wheres.Add(new QueryWhere(whereSql));
-            }
+            if (whereSql.IsNull())
+                return;
+
+            Wheres ??= new List<QueryWhere>();
+
+            Wheres.Add(new QueryWhere(whereSql));
         }
 
         public void SetWhere(LambdaExpression expression, string queryOperator, Abstractions.Queryable.IQueryable subQueryable)
         {
             if (subQueryable != null)
-            {
-                Wheres.Add(new QueryWhere(expression, queryOperator, subQueryable));
-            }
+                return;
+
+            Wheres ??= new List<QueryWhere>();
+
+            Wheres.Add(new QueryWhere(expression, queryOperator, subQueryable));
         }
 
         #endregion
@@ -169,11 +192,18 @@ namespace Mkh.Data.Core.Queryable.Internal
         /// <param name="selectExpression"></param>
         public void SetSelect(LambdaExpression selectExpression)
         {
-            if (selectExpression != null)
+            if (selectExpression == null)
+                return;
+
+            if (IsGroupBy && selectExpression.Body.NodeType != ExpressionType.New)
             {
-                Select.Mode = QuerySelectMode.Lambda;
-                Select.Include = selectExpression;
+                throw new ArgumentException("分组选择列必须使用匿名函数(m => new {})");
             }
+
+            Select ??= new QuerySelect();
+
+            Select.Mode = QuerySelectMode.Lambda;
+            Select.Include = selectExpression;
         }
 
         /// <summary>
@@ -182,11 +212,13 @@ namespace Mkh.Data.Core.Queryable.Internal
         /// <param name="sql"></param>
         public void SetSelect(string sql)
         {
-            if (sql.NotNull())
-            {
-                Select.Mode = QuerySelectMode.Sql;
-                Select.Sql = sql;
-            }
+            if (sql.IsNull())
+                return;
+
+            Select ??= new QuerySelect();
+
+            Select.Mode = QuerySelectMode.Sql;
+            Select.Sql = sql;
         }
 
         /// <summary>
@@ -196,12 +228,14 @@ namespace Mkh.Data.Core.Queryable.Internal
         /// <param name="functionName">函数名称</param>
         public void SetFunctionSelect(LambdaExpression functionExpression, string functionName)
         {
-            if (functionExpression != null && functionName != null)
-            {
-                Select.Mode = QuerySelectMode.Function;
-                Select.FunctionExpression = functionExpression;
-                Select.FunctionName = functionName;
-            }
+            if (functionExpression == null || functionName == null)
+                return;
+
+            Select ??= new QuerySelect();
+
+            Select.Mode = QuerySelectMode.Function;
+            Select.FunctionExpression = functionExpression;
+            Select.FunctionName = functionName;
         }
 
         /// <summary>
@@ -210,6 +244,8 @@ namespace Mkh.Data.Core.Queryable.Internal
         /// <param name="excludeExpression"></param>
         public void SetSelectExclude(LambdaExpression excludeExpression)
         {
+            Select ??= new QuerySelect();
+
             Select.Exclude = excludeExpression;
         }
 
@@ -229,12 +265,16 @@ namespace Mkh.Data.Core.Queryable.Internal
 
         public void SetUpdate(LambdaExpression expression)
         {
+            Update ??= new QueryUpdate();
+
             Update.Mode = QueryUpdateMode.Lambda;
             Update.Lambda = expression;
         }
 
         public void SetUpdate(string sql)
         {
+            Update ??= new QueryUpdate();
+
             Update.Mode = QueryUpdateMode.Sql;
             Update.Sql = sql;
         }
@@ -331,6 +371,50 @@ namespace Mkh.Data.Core.Queryable.Internal
 
         #endregion
 
+        #region ==设置分组条件==
+
+        public void SetGroupBy(Expression groupByExpression)
+        {
+            if (groupByExpression == null)
+                return;
+
+            GroupBy = groupByExpression as LambdaExpression;
+        }
+
+        #endregion
+
+        #region ==设置聚合过滤条件==
+
+        /// <summary>
+        /// 设置聚合过滤条件
+        /// </summary>
+        /// <param name="havingExpression"></param>
+        public void SetHaving(LambdaExpression havingExpression)
+        {
+            if (havingExpression == null)
+                return;
+
+            Havings ??= new List<QueryHaving>();
+
+            Havings.Add(new QueryHaving(havingExpression));
+        }
+
+        /// <summary>
+        /// 设置聚合过滤条件
+        /// </summary>
+        /// <param name="havingSql"></param>
+        public void SetHaving(string havingSql)
+        {
+            if (havingSql.IsNull())
+                return;
+
+            Havings ??= new List<QueryHaving>();
+
+            Havings.Add(new QueryHaving(havingSql));
+        }
+
+        #endregion
+
         #endregion
 
         #region ==Copy==
@@ -339,31 +423,51 @@ namespace Mkh.Data.Core.Queryable.Internal
         {
             var copy = new QueryBody(Repository)
             {
+                Repository = Repository,
                 FilterDeleted = FilterDeleted,
                 FilterTenant = FilterTenant,
-                IsGroupBy = IsGroupBy,
+                GroupBy = GroupBy,
                 Skip = Skip,
                 Take = Take
             };
 
             copy.Joins.AddRange(Joins);
 
-            copy.Wheres.AddRange(Wheres);
+            if (Wheres != null)
+            {
+                copy.Wheres = new List<QueryWhere>();
+                copy.Wheres.AddRange(Wheres);
+            }
 
-            copy.Sorts.AddRange(Sorts);
+            if (Sorts != null)
+            {
+                copy.Sorts = new List<QuerySort>();
+                copy.Sorts.AddRange(Sorts);
+            }
 
-            copy.GroupBys.AddRange(GroupBys);
+            if (Update != null)
+            {
+                copy.Update = new QueryUpdate { Lambda = Update.Lambda, Sql = Update.Sql, Mode = Update.Mode };
+            }
 
-            copy.Update.Lambda = Update.Lambda;
-            copy.Update.Sql = Update.Sql;
-            copy.Update.Mode = Update.Mode;
+            if (Select != null)
+            {
+                copy.Select = new QuerySelect
+                {
+                    Sql = Select.Sql,
+                    FunctionName = Select.FunctionName,
+                    Exclude = Select.Exclude,
+                    FunctionExpression = Select.FunctionExpression,
+                    Include = Select.Include,
+                    Mode = Select.Mode
+                };
+            }
 
-            copy.Select.Sql = Select.Sql;
-            copy.Select.FunctionName = Select.FunctionName;
-            copy.Select.Exclude = Select.Exclude;
-            copy.Select.FunctionExpression = Select.FunctionExpression;
-            copy.Select.Include = Select.Include;
-            copy.Select.Mode = Select.Mode;
+            if (Havings != null)
+            {
+                copy.Havings = new List<QueryHaving>();
+                copy.Havings.AddRange(Havings);
+            }
 
             return copy;
         }

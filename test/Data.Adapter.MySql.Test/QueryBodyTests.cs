@@ -4,7 +4,7 @@ using System.Linq.Expressions;
 using Data.Common.Test.Domain.Article;
 using Data.Common.Test.Domain.Category;
 using Microsoft.Extensions.DependencyInjection;
-using Mkh.Data.Core.Queryable.Internal;
+using Mkh.Data.Core.Internal.QueryStructure;
 using Xunit;
 using Xunit.Abstractions;
 

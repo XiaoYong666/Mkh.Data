@@ -7,20 +7,20 @@ using Mkh.Data.Abstractions;
 using Mkh.Data.Abstractions.Logger;
 using Mkh.Data.Abstractions.Pagination;
 using Mkh.Data.Abstractions.Queryable;
-using Mkh.Data.Core.Queryable.Internal;
+using Mkh.Data.Core.Internal.QueryStructure;
 using Mkh.Data.Core.SqlBuilder;
 using IQueryable = Mkh.Data.Abstractions.Queryable.IQueryable;
 
 namespace Mkh.Data.Core.Queryable
 {
-    internal class QueryableAbstract : IQueryable
+    internal class Queryable : IQueryable
     {
         protected readonly IRepository _repository;
         protected readonly QueryBody _queryBody;
         protected readonly QueryableSqlBuilder _sqlBuilder;
         protected readonly DbLogger _logger;
 
-        public QueryableAbstract(IRepository repository)
+        public Queryable(IRepository repository)
         {
             _repository = repository;
             _logger = repository.DbContext.Logger;
@@ -28,7 +28,7 @@ namespace Mkh.Data.Core.Queryable
             _sqlBuilder = new QueryableSqlBuilder(_queryBody);
         }
 
-        protected QueryableAbstract(QueryBody queryBody)
+        protected Queryable(QueryBody queryBody)
         {
             _queryBody = queryBody;
             _repository = queryBody.Repository;
@@ -38,34 +38,34 @@ namespace Mkh.Data.Core.Queryable
 
         #region ==List==
 
-        public Task<IList<dynamic>> ListDynamic()
+        public Task<IList<dynamic>> ToListDynamic()
         {
-            return List<dynamic>();
+            return ToList<dynamic>();
         }
 
-        public async Task<IList<TResult>> List<TResult>()
+        public async Task<IList<TResult>> ToList<TResult>()
         {
             var sql = _sqlBuilder.BuildListSql(out IQueryParameters parameters);
             _logger.Write("List", sql);
             return (await _repository.Query<TResult>(sql, parameters.ToDynamicParameters())).ToList();
         }
 
-        public string ListSql()
+        public string ToListSql()
         {
             return _sqlBuilder.BuildListSql(out _);
         }
 
-        public string ListSql(out IQueryParameters parameters)
+        public string ToListSql(out IQueryParameters parameters)
         {
             return _sqlBuilder.BuildListSql(out parameters);
         }
 
-        public string ListSql(IQueryParameters parameters)
+        public string ToListSql(IQueryParameters parameters)
         {
             return _sqlBuilder.BuildListSql(parameters);
         }
 
-        public string ListSqlNotUseParameters()
+        public string ToListSqlNotUseParameters()
         {
             return _sqlBuilder.BuildListSqlNotUseParameters();
         }
@@ -74,7 +74,7 @@ namespace Mkh.Data.Core.Queryable
 
         #region ==Reader==
 
-        public Task<IDataReader> Reader()
+        public Task<IDataReader> ToReader()
         {
             var sql = _sqlBuilder.BuildListSql(out IQueryParameters parameters);
             _logger.Write("Reader", sql);
@@ -85,22 +85,22 @@ namespace Mkh.Data.Core.Queryable
 
         #region ==Pagination==
 
-        public Task<IList<dynamic>> PaginationDynamic()
+        public Task<IList<dynamic>> ToPaginationDynamic()
         {
-            return Pagination<dynamic>(null);
+            return ToPagination<dynamic>(null);
         }
 
-        public Task<IList<dynamic>> PaginationDynamic(Paging paging)
+        public Task<IList<dynamic>> ToPaginationDynamic(Paging paging)
         {
-            return Pagination<dynamic>(paging);
+            return ToPagination<dynamic>(paging);
         }
 
-        public Task<IList<TResult>> Pagination<TResult>()
+        public Task<IList<TResult>> ToPagination<TResult>()
         {
-            return Pagination<TResult>(null);
+            return ToPagination<TResult>(null);
         }
 
-        public async Task<IList<TResult>> Pagination<TResult>(Paging paging)
+        public async Task<IList<TResult>> ToPagination<TResult>(Paging paging)
         {
             if (paging == null)
                 _queryBody.SetLimit(1, 15);
@@ -114,13 +114,13 @@ namespace Mkh.Data.Core.Queryable
 
             if (paging != null && paging.QueryCount)
             {
-                paging.TotalCount = await Count();
+                paging.TotalCount = await ToCount();
             }
 
             return (await task).ToList();
         }
 
-        public string PaginationSql(Paging paging)
+        public string ToPaginationSql(Paging paging)
         {
             if (paging == null)
                 _queryBody.SetLimit(1, 15);
@@ -130,7 +130,7 @@ namespace Mkh.Data.Core.Queryable
             return _sqlBuilder.BuildPaginationSql(out _);
         }
 
-        public string PaginationSql(Paging paging, out IQueryParameters parameters)
+        public string ToPaginationSql(Paging paging, out IQueryParameters parameters)
         {
             if (paging == null)
                 _queryBody.SetLimit(1, 15);
@@ -140,7 +140,7 @@ namespace Mkh.Data.Core.Queryable
             return _sqlBuilder.BuildPaginationSql(out parameters);
         }
 
-        public string PaginationSql(Paging paging, IQueryParameters parameters)
+        public string ToPaginationSql(Paging paging, IQueryParameters parameters)
         {
             if (paging == null)
                 _queryBody.SetLimit(1, 15);
@@ -150,7 +150,7 @@ namespace Mkh.Data.Core.Queryable
             return _sqlBuilder.BuildPaginationSql(parameters);
         }
 
-        public string PaginationSqlNotUseParameters(Paging paging)
+        public string ToPaginationSqlNotUseParameters(Paging paging)
         {
             if (paging == null)
                 _queryBody.SetLimit(1, 15);
@@ -164,34 +164,34 @@ namespace Mkh.Data.Core.Queryable
 
         #region ==First==
 
-        public Task<dynamic> FirstDynamic()
+        public Task<dynamic> ToFirstDynamic()
         {
-            return First<dynamic>();
+            return ToFirst<dynamic>();
         }
 
-        public Task<TResult> First<TResult>()
+        public Task<TResult> ToFirst<TResult>()
         {
             var sql = _sqlBuilder.BuildFirstSql(out IQueryParameters parameters);
             _logger.Write("First", sql);
             return _repository.QueryFirstOrDefault<TResult>(sql, parameters.ToDynamicParameters());
         }
 
-        public string FirstSql()
+        public string ToFirstSql()
         {
             return _sqlBuilder.BuildFirstSql(out _);
         }
 
-        public string FirstSql(out IQueryParameters parameters)
+        public string ToFirstSql(out IQueryParameters parameters)
         {
             return _sqlBuilder.BuildFirstSql(out parameters);
         }
 
-        public string FirstSql(IQueryParameters parameters)
+        public string ToFirstSql(IQueryParameters parameters)
         {
             return _sqlBuilder.BuildFirstSql(parameters);
         }
 
-        public string FirstSqlNotUseParameters()
+        public string ToFirstSqlNotUseParameters()
         {
             return _sqlBuilder.BuildFirstSqlNotUserParameters();
         }
@@ -200,29 +200,29 @@ namespace Mkh.Data.Core.Queryable
 
         #region ==Count==
 
-        public Task<long> Count()
+        public Task<long> ToCount()
         {
             var sql = _sqlBuilder.BuildCountSql(out IQueryParameters parameters);
             _logger.Write("Count", sql);
             return _repository.ExecuteScalar<long>(sql, parameters.ToDynamicParameters());
         }
 
-        public string CountSql()
+        public string ToCountSql()
         {
             return _sqlBuilder.BuildCountSql(out _);
         }
 
-        public string CountSql(out IQueryParameters parameters)
+        public string ToCountSql(out IQueryParameters parameters)
         {
             return _sqlBuilder.BuildCountSql(out parameters);
         }
 
-        public string CountSql(IQueryParameters parameters)
+        public string ToCountSql(IQueryParameters parameters)
         {
             return _sqlBuilder.BuildCountSql(parameters);
         }
 
-        public string CountSqlNotUseParameters()
+        public string ToCountSqlNotUseParameters()
         {
             return _sqlBuilder.BuildCountSqlNotUseParameters();
         }
@@ -231,29 +231,29 @@ namespace Mkh.Data.Core.Queryable
 
         #region ==Exists==
 
-        public async Task<bool> Exists()
+        public async Task<bool> ToExists()
         {
             var sql = _sqlBuilder.BuildExistsSql(out IQueryParameters parameters);
             _logger.Write("Exists", sql);
             return await _repository.ExecuteScalar<int>(sql, parameters.ToDynamicParameters()) > 0;
         }
 
-        public string ExistsSql()
+        public string ToExistsSql()
         {
             return _sqlBuilder.BuildExistsSql(out _);
         }
 
-        public string ExistsSql(out IQueryParameters parameters)
+        public string ToExistsSql(out IQueryParameters parameters)
         {
             return _sqlBuilder.BuildExistsSql(out parameters);
         }
 
-        public string ExistsSql(IQueryParameters parameters)
+        public string ToExistsSql(IQueryParameters parameters)
         {
             return _sqlBuilder.BuildExistsSql(parameters);
         }
 
-        public string ExistsSqlNotUseParameters()
+        public string ToExistsSqlNotUseParameters()
         {
             return _sqlBuilder.BuildExistsSqlNotUseParameters();
         }

@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
@@ -15,7 +13,7 @@ using Mkh.Data.Abstractions.Pagination;
 using Mkh.Data.Abstractions.Queryable;
 using Mkh.Data.Core.Extensions;
 using Mkh.Data.Core.Internal;
-using Mkh.Data.Core.Queryable.Internal;
+using Mkh.Data.Core.Internal.QueryStructure;
 
 #if DEBUG
 [assembly: InternalsVisibleTo("Data.Adapter.MySql.Test")]
@@ -34,11 +32,6 @@ namespace Mkh.Data.Core.SqlBuilder
         private readonly QueryBody _queryBody;
         private readonly IDbAdapter _dbAdapter;
         private readonly IDbContext _dbContext;
-
-        /// <summary>
-        /// 是否使用参数化
-        /// </summary>
-        private bool _useParameters = true;
 
         public QueryableSqlBuilder(QueryBody queryBody)
         {
@@ -71,9 +64,9 @@ namespace Mkh.Data.Core.SqlBuilder
             sqlBuilder.Append("SELECT ");
             ResolveSelect(sqlBuilder);
             sqlBuilder.Append(" FROM ");
-            ResolveFrom(sqlBuilder, parameters);
+            ExpressionResolver.ResolveFrom(_queryBody, sqlBuilder, parameters);
             sqlBuilder.Append(" ");
-            ResolveWhere(sqlBuilder, parameters);
+            ExpressionResolver.ResolveWhere(_queryBody, sqlBuilder, parameters);
             ResolveSort(sqlBuilder);
 
             return sqlBuilder.ToString();
@@ -85,9 +78,9 @@ namespace Mkh.Data.Core.SqlBuilder
         /// <returns></returns>
         public string BuildListSqlNotUseParameters()
         {
-            _useParameters = false;
+            _queryBody.UseParameters = false;
             var sql = BuildListSql(out _);
-            _useParameters = true;
+            _queryBody.UseParameters = true;
             return sql;
         }
 
@@ -114,8 +107,8 @@ namespace Mkh.Data.Core.SqlBuilder
         public string BuildFirstSql(IQueryParameters parameters)
         {
             var select = ResolveSelect();
-            var from = ResolveFrom(parameters);
-            var where = ResolveWhere(parameters);
+            var from = ExpressionResolver.ResolveFrom(_queryBody, parameters);
+            var where = ExpressionResolver.ResolveWhere(_queryBody, parameters);
             var sort = ResolveSort();
 
             return _dbAdapter.GenerateFirstSql(_dbContext.Options.Version, select, from, where, sort);
@@ -127,9 +120,9 @@ namespace Mkh.Data.Core.SqlBuilder
         /// <returns></returns>
         public string BuildFirstSqlNotUserParameters()
         {
-            _useParameters = false;
+            _queryBody.UseParameters = false;
             var sql = BuildFirstSql(out _);
-            _useParameters = true;
+            _queryBody.UseParameters = true;
             return sql;
         }
 
@@ -156,8 +149,8 @@ namespace Mkh.Data.Core.SqlBuilder
         public string BuildPaginationSql(IQueryParameters parameters)
         {
             var select = ResolveSelect();
-            var from = ResolveFrom(parameters);
-            var where = ResolveWhere(parameters);
+            var from = ExpressionResolver.ResolveFrom(_queryBody, parameters);
+            var where = ExpressionResolver.ResolveWhere(_queryBody, parameters);
             var sort = ResolveSort();
 
             return _dbAdapter.GeneratePagingSql(_dbContext.Options.Version, select, from, where, sort, _queryBody.Skip, _queryBody.Take);
@@ -169,9 +162,9 @@ namespace Mkh.Data.Core.SqlBuilder
         /// <returns></returns>
         public string BuildPaginationSqlNotUseParameters()
         {
-            _useParameters = false;
+            _queryBody.UseParameters = false;
             var sql = BuildPaginationSql(out _);
-            _useParameters = true;
+            _queryBody.UseParameters = true;
             return sql;
         }
 
@@ -194,9 +187,9 @@ namespace Mkh.Data.Core.SqlBuilder
         {
             var sqlBuilder = new StringBuilder("SELECT COUNT(*) FROM ");
 
-            ResolveFrom(sqlBuilder, parameters);
+            ExpressionResolver.ResolveFrom(_queryBody, sqlBuilder, parameters);
 
-            ResolveWhere(sqlBuilder, parameters);
+            ExpressionResolver.ResolveWhere(_queryBody, sqlBuilder, parameters);
 
             var sql = sqlBuilder.ToString();
 
@@ -209,9 +202,9 @@ namespace Mkh.Data.Core.SqlBuilder
         /// <returns></returns>
         public string BuildCountSqlNotUseParameters()
         {
-            _useParameters = false;
+            _queryBody.UseParameters = false;
             var sql = BuildCountSql(out _);
-            _useParameters = true;
+            _queryBody.UseParameters = true;
             return sql;
         }
 
@@ -238,8 +231,8 @@ namespace Mkh.Data.Core.SqlBuilder
         public string BuildExistsSql(IQueryParameters parameters)
         {
             var select = "1";
-            var from = ResolveFrom(parameters);
-            var where = ResolveWhere(parameters);
+            var from = ExpressionResolver.ResolveFrom(_queryBody, parameters);
+            var where = ExpressionResolver.ResolveWhere(_queryBody, parameters);
             var sort = ResolveSort();
 
             var sql = _dbAdapter.GenerateFirstSql(_dbContext.Options.Version, select, from, where, sort);
@@ -253,9 +246,9 @@ namespace Mkh.Data.Core.SqlBuilder
         /// <returns></returns>
         public string BuildExistsSqlNotUseParameters()
         {
-            _useParameters = false;
+            _queryBody.UseParameters = false;
             var sql = BuildExistsSql(out _);
-            _useParameters = true;
+            _queryBody.UseParameters = true;
             return sql;
         }
 
@@ -300,9 +293,9 @@ namespace Mkh.Data.Core.SqlBuilder
             sqlBuilder.Append(_dbAdapter.FunctionMapper(_queryBody.Select.FunctionName, columnName));
 
             sqlBuilder.Append(" FROM ");
-            ResolveFrom(sqlBuilder, parameters);
+            ExpressionResolver.ResolveFrom(_queryBody, sqlBuilder, parameters);
             sqlBuilder.Append(" ");
-            ResolveWhere(sqlBuilder, parameters);
+            ExpressionResolver.ResolveWhere(_queryBody, sqlBuilder, parameters);
 
             return sqlBuilder.ToString();
         }
@@ -313,9 +306,9 @@ namespace Mkh.Data.Core.SqlBuilder
         /// <returns></returns>
         public string BuildFunctionSqlNotUseParameters()
         {
-            _useParameters = false;
+            _queryBody.UseParameters = false;
             var sql = BuildFunctionSql(out _);
-            _useParameters = true;
+            _queryBody.UseParameters = true;
             return sql;
         }
 
@@ -347,7 +340,7 @@ namespace Mkh.Data.Core.SqlBuilder
             var sqlBuilder = new StringBuilder();
 
             //更新语句优先
-            var updateSql = _queryBody.Update.Sql.NotNull() ? _queryBody.Update.Sql : ResolveExpression(_queryBody.Update.Lambda, parameters);
+            var updateSql = _queryBody.Update.Sql.NotNull() ? _queryBody.Update.Sql : ExpressionResolver.Resolve(_queryBody, _queryBody.Update.Lambda, parameters);
             Check.NotNull(updateSql, nameof(updateSql), "生成更新sql异常");
 
             sqlBuilder.AppendFormat("UPDATE {0} SET ", _dbAdapter.AppendQuote(tableName));
@@ -355,7 +348,7 @@ namespace Mkh.Data.Core.SqlBuilder
 
             SetUpdateInfo(sqlBuilder, parameters);
 
-            var whereSql = ResolveWhere(parameters);
+            var whereSql = ExpressionResolver.ResolveWhere(_queryBody, parameters);
             Check.NotNull(whereSql, nameof(whereSql), "批量更新必须指定条件，防止人为失误误操作");
             sqlBuilder.AppendFormat(" {0};", whereSql);
 
@@ -368,9 +361,9 @@ namespace Mkh.Data.Core.SqlBuilder
         /// <returns></returns>
         public string BuildUpdateSqlNotUseParameters()
         {
-            _useParameters = false;
+            _queryBody.UseParameters = false;
             var sql = BuildUpdateSql(out _);
-            _useParameters = true;
+            _queryBody.UseParameters = true;
             return sql;
         }
 
@@ -384,7 +377,7 @@ namespace Mkh.Data.Core.SqlBuilder
             var descriptor = _queryBody.Joins.First().EntityDescriptor;
             if (descriptor.IsEntityBase)
             {
-                if (_useParameters)
+                if (_queryBody.UseParameters)
                 {
                     var p1 = parameters.Add(_dbContext.AccountResolver.AccountId);
                     sqlBuilder.AppendFormat(",{0} = @{1}", _dbAdapter.AppendQuote(descriptor.GetModifiedByColumnName()), p1);
@@ -396,11 +389,11 @@ namespace Mkh.Data.Core.SqlBuilder
                 else
                 {
                     sqlBuilder.AppendFormat(",{0} = ", _dbAdapter.AppendQuote(descriptor.GetModifiedByColumnName()));
-                    AppendValue(_dbContext.AccountResolver.AccountId, sqlBuilder, parameters);
+                    ExpressionResolver.AppendValue(_queryBody, _dbContext.AccountResolver.AccountId, sqlBuilder, parameters);
                     sqlBuilder.AppendFormat(",{0} = ", _dbAdapter.AppendQuote(descriptor.GetModifierColumnName()));
-                    AppendValue(_dbContext.AccountResolver.AccountName, sqlBuilder, parameters);
+                    ExpressionResolver.AppendValue(_queryBody, _dbContext.AccountResolver.AccountName, sqlBuilder, parameters);
                     sqlBuilder.AppendFormat(",{0} = ", _dbAdapter.AppendQuote(descriptor.GetModifiedTimeColumnName()));
-                    AppendValue(DateTime.Now, sqlBuilder, parameters);
+                    ExpressionResolver.AppendValue(_queryBody, DateTime.Now, sqlBuilder, parameters);
                 }
             }
         }
@@ -434,7 +427,7 @@ namespace Mkh.Data.Core.SqlBuilder
 
             sqlBuilder.AppendFormat("DELETE FROM {0} ", _dbAdapter.AppendQuote(tableName));
 
-            var whereSql = ResolveWhere(parameters);
+            var whereSql = ExpressionResolver.ResolveWhere(_queryBody, parameters);
             Check.NotNull(whereSql, nameof(whereSql), "生成条件sql异常，删除必须指定条件，防止误操作");
             sqlBuilder.AppendFormat(" {0}", whereSql);
 
@@ -447,15 +440,15 @@ namespace Mkh.Data.Core.SqlBuilder
         /// <returns></returns>
         public string BuildDeleteSqlNotUseParameters()
         {
-            _useParameters = false;
+            _queryBody.UseParameters = false;
             var sql = BuildDeleteSql(out _);
-            _useParameters = true;
+            _queryBody.UseParameters = true;
             return sql;
         }
 
         #endregion
 
-        #region ==
+        #region ==BuildSoftDeleteSql==
 
         /// <summary>
         /// 生成软删除SQL
@@ -490,13 +483,13 @@ namespace Mkh.Data.Core.SqlBuilder
             var sqlBuilder = new StringBuilder($"UPDATE {_dbAdapter.AppendQuote(tableName)} SET ");
             sqlBuilder.AppendFormat("{0} = {1},", _dbAdapter.AppendQuote(deletedColumnName), _dbAdapter.BooleanTrueValue);
             sqlBuilder.AppendFormat("{0} = ", _dbAdapter.AppendQuote(deletedTimeColumnName));
-            AppendValue(DateTime.Now, sqlBuilder, parameters);
+            ExpressionResolver.AppendValue(_queryBody, DateTime.Now, sqlBuilder, parameters);
             sqlBuilder.AppendFormat(",{0} = ", _dbAdapter.AppendQuote(deletedByColumnName));
-            AppendValue(_dbContext.AccountResolver.AccountId, sqlBuilder, parameters);
+            ExpressionResolver.AppendValue(_queryBody, _dbContext.AccountResolver.AccountId, sqlBuilder, parameters);
             sqlBuilder.AppendFormat(",{0} = ", _dbAdapter.AppendQuote(deleterColumnName));
-            AppendValue(_dbContext.AccountResolver.AccountName, sqlBuilder, parameters);
+            ExpressionResolver.AppendValue(_queryBody, _dbContext.AccountResolver.AccountName, sqlBuilder, parameters);
 
-            var whereSql = ResolveWhere(parameters);
+            var whereSql = ExpressionResolver.ResolveWhere(_queryBody, parameters);
             Check.NotNull(whereSql, nameof(whereSql), "生成条件sql异常");
             sqlBuilder.AppendFormat(" {0}", whereSql);
 
@@ -509,9 +502,9 @@ namespace Mkh.Data.Core.SqlBuilder
         /// <returns></returns>
         public string BuildSoftDeleteSqlNotUseParameters()
         {
-            _useParameters = false;
+            _queryBody.UseParameters = false;
             var sql = BuildSoftDeleteSql(out _);
-            _useParameters = true;
+            _queryBody.UseParameters = true;
             return sql;
         }
 
@@ -532,11 +525,12 @@ namespace Mkh.Data.Core.SqlBuilder
         /// <returns></returns>
         public void ResolveSelect(StringBuilder sqlBuilder)
         {
+            var select = _queryBody.Select;
+
             //先解析出要排除的列
             var excludeColumns = ResolveSelectExcludeColumns();
 
-            var select = _queryBody.Select;
-            if (select.Mode == QuerySelectMode.UnKnown)
+            if (select == null)
             {
                 //解析所有实体
                 ResolveSelectForEntity(sqlBuilder, 0, excludeColumns);
@@ -584,7 +578,7 @@ namespace Mkh.Data.Core.SqlBuilder
         /// <returns></returns>
         public List<IColumnDescriptor> ResolveSelectExcludeColumns()
         {
-            if (_queryBody.Select.Exclude != null)
+            if (_queryBody.Select != null && _queryBody.Select.Exclude != null)
             {
                 var lambda = _queryBody.Select.Exclude;
                 var body = lambda.Body;
@@ -687,17 +681,8 @@ namespace Mkh.Data.Core.SqlBuilder
                 {
                     var memberExp = callExp!.Object as MemberExpression;
                     var columnName = _queryBody.GetColumnName(memberExp, fullLambda);
-                    object arg0 = null;
-                    if (callExp.Arguments.Count > 0)
-                    {
-                        arg0 = ((ConstantExpression)callExp.Arguments[0]).Value;
-                    }
-                    object arg1 = null;
-                    if (callExp.Arguments.Count > 1)
-                    {
-                        arg1 = ((ConstantExpression)callExp.Arguments[1]).Value;
-                    }
-                    sqlBuilder.AppendFormat("{0} AS {1},", _dbAdapter.FunctionMapper(callExp.Method.Name, columnName, callExp.Object!.Type, arg0, arg1), _dbAdapter.AppendQuote(alias));
+                    var args = ExpressionResolver.Arguments2Object(callExp.Arguments);
+                    sqlBuilder.AppendFormat("{0} AS {1},", _dbAdapter.FunctionMapper(callExp.Method.Name, columnName, callExp.Object!.Type, args), _dbAdapter.AppendQuote(alias));
                 }
             }
         }
@@ -707,19 +692,7 @@ namespace Mkh.Data.Core.SqlBuilder
             alias ??= memberExp.Member.Name;
             if (memberExp.Expression!.NodeType == ExpressionType.MemberAccess)
             {
-                //分组查询
-                if (_queryBody.IsGroupBy)
-                {
-                    //GroupByJoinDescriptor descriptor = _queryBody.GroupByPropertyList.FirstOrDefault(m =>
-                    //    _sqlAdapter.AppendQuote(m.Alias) == alias || m.Name == memberExp.Member.Name);
-
-                    //if (descriptor != null)
-                    //{
-                    //    var colName = _queryBody.GetColumnName(descriptor.Name, descriptor.JoinDescriptor);
-                    //    sqlBuilder.AppendFormat("{0} AS {1},", colName, alias);
-                    //}
-                }
-                else if (memberExp.Expression.Type.IsString())
+                if (memberExp.Expression.Type.IsString())
                 {
                     var columnName = _queryBody.GetColumnName(memberExp.Expression as MemberExpression, fullLambda);
                     sqlBuilder.AppendFormat("{0} AS {1},", _dbAdapter.FunctionMapper(memberExp.Member.Name, columnName), _dbAdapter.AppendQuote(alias));
@@ -738,93 +711,6 @@ namespace Mkh.Data.Core.SqlBuilder
 
         #endregion
 
-        #region ==解析表==
-
-        public string ResolveFrom(IQueryParameters parameters)
-        {
-            var sqlBuilder = new StringBuilder();
-            ResolveFrom(sqlBuilder, parameters);
-            return sqlBuilder.ToString();
-        }
-
-        public void ResolveFrom(StringBuilder sqlBuilder, IQueryParameters parameters)
-        {
-            var first = _queryBody.Joins.First();
-
-            if (_queryBody.Joins.Count == 1)
-            {
-                sqlBuilder.AppendFormat("{0}", _dbAdapter.AppendQuote(first.TableName));
-
-                //附加SqlServer的NOLOCK特性
-                if (_dbAdapter.Provider == DbProvider.SqlServer && first.NoLock)
-                {
-                    sqlBuilder.Append(" WITH (NOLOCK)");
-                }
-
-                return;
-            }
-
-            sqlBuilder.AppendFormat("{0} AS {1}", _dbAdapter.AppendQuote(first.TableName), first.Alias);
-            //附加NOLOCK特性
-            if (_dbAdapter.Provider == DbProvider.SqlServer && first.NoLock)
-            {
-                sqlBuilder.Append(" WITH (NOLOCK)");
-            }
-
-            for (var i = 1; i < _queryBody.Joins.Count; i++)
-            {
-                var join = _queryBody.Joins[i];
-                switch (join.Type)
-                {
-                    case JoinType.Inner:
-                        sqlBuilder.Append(" INNER");
-                        break;
-                    case JoinType.Right:
-                        sqlBuilder.Append(" RIGHT");
-                        break;
-                    default:
-                        sqlBuilder.Append(" LEFT");
-                        break;
-                }
-
-                sqlBuilder.AppendFormat(" JOIN {0} AS {1}", _dbAdapter.AppendQuote(join.TableName), join.Alias);
-                //附加SqlServer的NOLOCK特性
-                if (_dbAdapter.Provider == DbProvider.SqlServer && first.NoLock)
-                {
-                    sqlBuilder.Append(" WITH (NOLOCK)");
-                }
-
-                sqlBuilder.Append(" ON ");
-                sqlBuilder.Append(ResolveExpression(join.On, parameters));
-
-                if (join.Type == JoinType.Inner)
-                {
-                    //过滤软删除
-                    if (_queryBody.FilterDeleted && join.EntityDescriptor.IsSoftDelete)
-                    {
-                        sqlBuilder.AppendFormat(" AND {0}.{1} = {2}", join.Alias, _dbAdapter.AppendQuote(join.EntityDescriptor.GetDeletedColumnName()), _dbAdapter.BooleanFalseValue);
-                    }
-
-                    //添加租户过滤
-                    if (_queryBody.FilterTenant && join.EntityDescriptor.IsTenant)
-                    {
-                        var x1 = _dbAdapter.AppendQuote(DbConstants.TENANT_COLUMN_NAME);
-                        var tenantId = _queryBody.Repository.DbContext.AccountResolver.TenantId;
-                        if (tenantId == null)
-                        {
-                            sqlBuilder.AppendFormat(" AND {0}.{1} IS NULL", join.Alias, x1);
-                        }
-                        else
-                        {
-                            sqlBuilder.AppendFormat(" AND {0}.{1} = '{2}'", join.Alias, x1, tenantId);
-                        }
-                    }
-                }
-            }
-        }
-
-        #endregion
-
         #region ==解析排序==
 
         /// <summary>
@@ -833,7 +719,7 @@ namespace Mkh.Data.Core.SqlBuilder
         /// <returns></returns>
         public string ResolveSort()
         {
-            if (!_queryBody.Sorts.Any())
+            if (_queryBody.Sorts.IsNullOrEmpty())
                 return string.Empty;
 
             var sqlBuilder = new StringBuilder();
@@ -843,7 +729,11 @@ namespace Mkh.Data.Core.SqlBuilder
 
         public void ResolveSort(StringBuilder sqlBuilder)
         {
+            if (_queryBody.Sorts.IsNullOrEmpty())
+                return;
+
             var startLength = sqlBuilder.Length;
+            sqlBuilder.Append(" ORDER BY");
             foreach (var sort in _queryBody.Sorts)
             {
                 if (sort.Mode == QuerySortMode.Lambda)
@@ -856,7 +746,11 @@ namespace Mkh.Data.Core.SqlBuilder
                 }
             }
 
-            if (startLength < sqlBuilder.Length)
+            if (startLength + 9 == sqlBuilder.Length)
+            {
+                sqlBuilder.Remove(sqlBuilder.Length - 9, 9);
+            }
+            else if (startLength + 9 < sqlBuilder.Length)
             {
                 sqlBuilder.Remove(sqlBuilder.Length - 1, 1);
             }
@@ -889,17 +783,17 @@ namespace Mkh.Data.Core.SqlBuilder
                 var callExp = exp as MethodCallExpression;
                 var memberExp = callExp!.Object as MemberExpression;
                 var columnName = _queryBody.GetColumnName(memberExp, fullExp);
-                object arg0 = null;
-                if (callExp.Arguments.Count > 0)
+                object[] args = null;
+                if (callExp.Arguments.Any())
                 {
-                    arg0 = ((ConstantExpression)callExp.Arguments[0]).Value;
+                    args = new object[callExp.Arguments.Count];
+
+                    for (int i = 0; i < callExp.Arguments.Count; i++)
+                    {
+                        args[i] = ((ConstantExpression)callExp.Arguments[i]).Value;
+                    }
                 }
-                object arg1 = null;
-                if (callExp.Arguments.Count > 1)
-                {
-                    arg1 = ((ConstantExpression)callExp.Arguments[1]).Value;
-                }
-                sqlBuilder.AppendFormat(" {0} {1},", _dbAdapter.FunctionMapper(callExp.Method.Name, columnName, callExp.Object!.Type, arg0, arg1), sortType == SortType.Asc ? "ASC" : "DESC");
+                sqlBuilder.AppendFormat(" {0} {1},", _dbAdapter.FunctionMapper(callExp.Method.Name, columnName, callExp.Object!.Type, args), sortType == SortType.Asc ? "ASC" : "DESC");
                 return;
             }
 
@@ -926,978 +820,15 @@ namespace Mkh.Data.Core.SqlBuilder
                     sqlBuilder.AppendFormat(" {0} {1},", columnName, sortType == SortType.Asc ? "ASC" : "DESC");
                     break;
                 case ExpressionType.MemberAccess:
-                    //分组查询
-                    if (_queryBody.IsGroupBy)
-                    {
-                        var groupBy = _queryBody.GroupBys.FirstOrDefault(m => m.Alias == memberExp.Member.Name);
-                        if (groupBy != null)
-                        {
-                            columnName = _queryBody.GetColumnName(groupBy.Field, groupBy.Join);
-                            sqlBuilder.AppendFormat(" {0} {1},", columnName, sortType == SortType.Asc ? "ASC" : "DESC");
-                        }
-                    }
-                    else if (memberExp.Expression.Type.IsString())
+                    if (memberExp.Expression.Type.IsString())
                     {
                         columnName = _queryBody.GetColumnName(memberExp.Expression as MemberExpression, fullLambda);
                         sqlBuilder.AppendFormat(" {0} {1},", _dbAdapter.FunctionMapper(memberExp.Member.Name, columnName), sortType == SortType.Asc ? "ASC" : "DESC");
                     }
-
                     break;
             }
         }
 
         #endregion
-
-        #region ==解析过滤条件==
-
-        public string ResolveWhere(IQueryParameters parameters)
-        {
-            var sqlBuilder = new StringBuilder();
-            ResolveWhere(sqlBuilder, parameters);
-            return sqlBuilder.ToString();
-        }
-
-        public void ResolveWhere(StringBuilder sqlBuilder, IQueryParameters parameters)
-        {
-            sqlBuilder.Append("WHERE ");
-            //记录下当前sqlBuilder的长度，用于解析完成后比对
-            var length = sqlBuilder.Length;
-
-            //解析where条件
-            if (_queryBody.Wheres.Any())
-            {
-                foreach (var w in _queryBody.Wheres)
-                {
-                    switch (w.Mode)
-                    {
-                        case QueryWhereMode.Lambda:
-                            ResolveExpression(w.Lambda.Body, w.Lambda, sqlBuilder, parameters);
-                            break;
-                        case QueryWhereMode.SubQuery:
-                            ResolveExpression(w.SubQueryColumn.Body, w.SubQueryColumn, sqlBuilder, parameters);
-                            var subSql = w.SubQueryable.ListSql(parameters);
-                            sqlBuilder.AppendFormat("{0} ({1})", w.SubQueryOperator, subSql);
-                            break;
-                        case QueryWhereMode.Sql:
-                            sqlBuilder.AppendFormat("({0})", w.Sql);
-                            break;
-                    }
-
-                    //通过比对长度判断是否有附加有效条件
-                    if (length != sqlBuilder.Length)
-                        sqlBuilder.Append(" AND ");
-                }
-            }
-
-            //解析软删除
-            ResolveWhereForSoftDelete(sqlBuilder);
-
-            //解析租户
-            ResolveWhereForTenant(sqlBuilder);
-
-            /*
-             * 1、当没有过滤条件时，需要移除WHERE关键字，此时sqlBuilder是以"WHERE "结尾，只需删除最后面的6位即可
-             * 2、当有过滤条件时，需要移除最后面的AND关键字，此时sqlBuilder是以" AND "结尾，也是只需删除最后面的5位即可
-             */
-            var removeLength = length == sqlBuilder.Length ? 6 : 5;
-            sqlBuilder.Remove(sqlBuilder.Length - removeLength, removeLength);
-        }
-
-        /// <summary>
-        /// 解析软删除过滤条件
-        /// </summary>
-        /// <param name="sqlBuilder"></param>
-        private void ResolveWhereForSoftDelete(StringBuilder sqlBuilder)
-        {
-            //未开启软删除过滤
-            if (!_queryBody.FilterDeleted)
-                return;
-
-            //单表
-            if (_queryBody.Joins.Count == 1)
-            {
-                var first = _queryBody.Joins.First();
-                if (!first.EntityDescriptor.IsSoftDelete)
-                    return;
-
-                sqlBuilder.AppendFormat("{0} = {1} AND ", _dbAdapter.AppendQuote(first.EntityDescriptor.GetDeletedColumnName()), _dbAdapter.BooleanFalseValue);
-
-                return;
-            }
-
-            //多表
-            foreach (var join in _queryBody.Joins)
-            {
-                if (!join.EntityDescriptor.IsSoftDelete || join.Type == JoinType.Inner)
-                    return;
-
-                sqlBuilder.AppendFormat("{0}.{1} = {2} AND ", _dbAdapter.AppendQuote(join.Alias), _dbAdapter.AppendQuote(join.EntityDescriptor.GetDeletedColumnName()), _dbAdapter.BooleanFalseValue);
-            }
-        }
-
-        /// <summary>
-        /// 解析租户过滤条件
-        /// </summary>
-        /// <param name="sqlBuilder"></param>
-        private void ResolveWhereForTenant(StringBuilder sqlBuilder)
-        {
-            //未开启过滤租户
-            if (!_queryBody.FilterTenant)
-                return;
-
-            var tenantId = _queryBody.Repository.DbContext.AccountResolver.TenantId;
-            //单表
-            if (_queryBody.Joins.Count == 1)
-            {
-                var first = _queryBody.Joins.First();
-                if (!first.EntityDescriptor.IsTenant)
-                    return;
-
-                //单表
-                var x0 = _dbAdapter.AppendQuote(DbConstants.TENANT_COLUMN_NAME);
-                if (tenantId == null)
-                {
-                    sqlBuilder.AppendFormat("{0} IS NULL AND ", x0);
-                }
-                else
-                {
-                    sqlBuilder.AppendFormat("{0} = '{1}' AND ", x0, tenantId);
-                }
-
-                return;
-            }
-
-            //多表
-            foreach (var join in _queryBody.Joins)
-            {
-                if (!join.EntityDescriptor.IsTenant || join.Type == JoinType.Inner)
-                    return;
-
-                //多表时附加别名
-                var x0 = _dbAdapter.AppendQuote(join.Alias);
-                var x1 = _dbAdapter.AppendQuote(DbConstants.TENANT_COLUMN_NAME);
-                if (tenantId == null)
-                {
-                    sqlBuilder.AppendFormat("{0}.{1} IS NULL AND ", x0, x1);
-                }
-                else
-                {
-                    sqlBuilder.AppendFormat("{0}.{1} = '{2}' AND", x0, x1, tenantId);
-                }
-            }
-        }
-
-        #endregion
-
-        #region ==解析表达式==
-
-        public string ResolveExpression(LambdaExpression expression, IQueryParameters parameters)
-        {
-            if (expression == null)
-                return string.Empty;
-
-            var sqlBuilder = new StringBuilder();
-
-            ResolveExpression(expression, expression, sqlBuilder, parameters);
-
-            return sqlBuilder.ToString();
-        }
-
-        public void ResolveExpression(Expression expression, LambdaExpression fullLambda, StringBuilder sqlBuilder, IQueryParameters parameters)
-        {
-            switch (expression.NodeType)
-            {
-                case ExpressionType.Lambda:
-                    ResolveExpression((expression as LambdaExpression)!.Body, fullLambda, sqlBuilder, parameters);
-                    break;
-                case ExpressionType.Convert:
-                case ExpressionType.ConvertChecked:
-                    ResolveExpression((expression as UnaryExpression)!.Operand, fullLambda, sqlBuilder, parameters);
-                    break;
-                case ExpressionType.Add:
-                case ExpressionType.AddChecked:
-                case ExpressionType.Subtract:
-                case ExpressionType.SubtractChecked:
-                case ExpressionType.Multiply:
-                case ExpressionType.MultiplyChecked:
-                case ExpressionType.Divide:
-                case ExpressionType.Modulo:
-                case ExpressionType.And:
-                case ExpressionType.AndAlso:
-                case ExpressionType.Or:
-                case ExpressionType.OrElse:
-                case ExpressionType.LessThan:
-                case ExpressionType.LessThanOrEqual:
-                case ExpressionType.GreaterThan:
-                case ExpressionType.GreaterThanOrEqual:
-                case ExpressionType.Equal:
-                case ExpressionType.NotEqual:
-                case ExpressionType.Coalesce:
-                case ExpressionType.ArrayIndex:
-                case ExpressionType.RightShift:
-                case ExpressionType.LeftShift:
-                case ExpressionType.ExclusiveOr:
-                    ResolveBinaryExpression(expression as BinaryExpression, fullLambda, sqlBuilder, parameters);
-                    break;
-                case ExpressionType.Constant:
-                    AppendValue((expression as ConstantExpression)!.Value, sqlBuilder, parameters);
-                    break;
-                case ExpressionType.MemberAccess:
-                    ResolveMemberExpression(expression as MemberExpression, fullLambda, sqlBuilder, parameters);
-                    break;
-                case ExpressionType.Call:
-                    ResolveCallExpression(expression as MethodCallExpression, fullLambda, sqlBuilder, parameters);
-                    break;
-                case ExpressionType.MemberInit:
-                    ResolveMemberInitExpression(expression, fullLambda, sqlBuilder, parameters);
-                    break;
-            }
-        }
-
-        /// <summary>
-        /// 解析二元运算符表达式
-        /// </summary>
-        /// <param name="exp"></param>
-        /// <param name="fullLambda"></param>
-        /// <param name="sqlBuilder"></param>
-        /// <param name="parameters"></param>
-        private void ResolveBinaryExpression(BinaryExpression exp, LambdaExpression fullLambda, StringBuilder sqlBuilder, IQueryParameters parameters)
-        {
-            //针对简写方式的布尔类型解析m=>m.Deleted
-            if (exp.Left.NodeType == ExpressionType.MemberAccess && exp.Left.Type == typeof(bool) && exp.NodeType != ExpressionType.Equal && exp.NodeType != ExpressionType.NotEqual)
-            {
-                ResolveMemberExpression(exp.Left as MemberExpression, fullLambda, sqlBuilder, parameters);
-                sqlBuilder.Append(" = ");
-                AppendValue(_dbAdapter.BooleanTrueValue, sqlBuilder, parameters);
-            }
-            //针对简写方式的布尔类型解析m=>!m.Deleted
-            else if (exp.Left.NodeType == ExpressionType.Not)
-            {
-                ResolveMemberExpression((exp.Left as UnaryExpression)!.Operand as MemberExpression, fullLambda, sqlBuilder, parameters);
-                sqlBuilder.Append(" = ");
-                AppendValue(_dbAdapter.BooleanFalseValue, sqlBuilder, parameters);
-            }
-            else
-            {
-                ResolveExpression(exp.Left, fullLambda, sqlBuilder, parameters);
-            }
-
-            switch (exp.NodeType)
-            {
-                case ExpressionType.And:
-                case ExpressionType.AndAlso:
-                    sqlBuilder.Append(" AND ");
-                    break;
-                case ExpressionType.GreaterThan:
-                    sqlBuilder.Append(" > ");
-                    break;
-                case ExpressionType.GreaterThanOrEqual:
-                    sqlBuilder.Append(" >= ");
-                    break;
-                case ExpressionType.LessThan:
-                    sqlBuilder.Append(" < ");
-                    break;
-                case ExpressionType.LessThanOrEqual:
-                    sqlBuilder.Append(" <= ");
-                    break;
-                case ExpressionType.Equal:
-                    sqlBuilder.Append(" = ");
-                    break;
-                case ExpressionType.OrElse:
-                case ExpressionType.Or:
-                    sqlBuilder.Append(" OR ");
-                    break;
-                case ExpressionType.NotEqual:
-                    sqlBuilder.Append(" <> ");
-                    break;
-                case ExpressionType.Add:
-                    sqlBuilder.Append(" + ");
-                    break;
-                case ExpressionType.Subtract:
-                    sqlBuilder.Append(" - ");
-                    break;
-                case ExpressionType.Multiply:
-                    sqlBuilder.Append(" * ");
-                    break;
-                case ExpressionType.Divide:
-                    sqlBuilder.Append(" / ");
-                    break;
-            }
-
-            ResolveExpression(exp.Right, fullLambda, sqlBuilder, parameters);
-        }
-
-        /// <summary>
-        /// 解析成员表达式
-        /// </summary>
-        /// <param name="exp"></param>
-        /// <param name="fullLambda"></param>
-        /// <param name="sqlBuilder"></param>
-        /// <param name="parameters"></param>
-        private void ResolveMemberExpression(MemberExpression exp, LambdaExpression fullLambda, StringBuilder sqlBuilder, IQueryParameters parameters)
-        {
-            if (exp.Expression != null)
-            {
-                switch (exp.Expression.NodeType)
-                {
-                    case ExpressionType.Parameter:
-                        sqlBuilder.Append(_queryBody.GetColumnName(exp, fullLambda));
-                        break;
-                    case ExpressionType.Constant:
-                        var val = ResolveDynamicInvoke(exp);
-                        AppendValue(val, sqlBuilder, parameters);
-                        break;
-                    case ExpressionType.MemberAccess:
-                        if (exp.Expression is MemberExpression subMemberExp && subMemberExp.Expression!.NodeType == ExpressionType.Constant)
-                        {
-                            val = ResolveDynamicInvoke(exp);
-                            AppendValue(val, sqlBuilder, parameters);
-                            return;
-                        }
-
-                        //分组查询
-                        if (_queryBody.IsGroupBy)
-                        {
-                            //var descriptor = _queryBody.GroupByPropertyList.FirstOrDefault(m => m.Alias == memberExp.Member.Name);
-                            //if (descriptor != null)
-                            //{
-                            //    var colName = _queryBody.GetColumnName(descriptor.Name, descriptor.JoinDescriptor);
-                            //    _sqlBuilder.AppendFormat("{0}", colName);
-                            //    return;
-                            //}
-                        }
-                        else if (exp.Expression.Type.IsString())
-                        {
-                            var columnName = _queryBody.GetColumnName(exp.Expression as MemberExpression, fullLambda);
-                            sqlBuilder.AppendFormat("{0}", _dbAdapter.FunctionMapper(exp.Member.Name, columnName));
-                        }
-                        break;
-                }
-
-                //针对简写方式的布尔类型解析m=>m.Deleted
-                if (exp == fullLambda.Body && exp.NodeType == ExpressionType.MemberAccess && exp.Type == typeof(bool))
-                {
-                    sqlBuilder.Append(" = ");
-                    AppendValue(_dbAdapter.BooleanTrueValue, sqlBuilder, parameters);
-                }
-            }
-        }
-
-        /// <summary>
-        /// 解析方法调用表达式
-        /// </summary>
-        /// <param name="exp"></param>
-        /// <param name="fullLambda"></param>
-        /// <param name="sqlBuilder"></param>
-        /// <param name="parameters"></param>
-        private void ResolveCallExpression(MethodCallExpression exp, LambdaExpression fullLambda, StringBuilder sqlBuilder, IQueryParameters parameters)
-        {
-            switch (exp.Method.Name)
-            {
-                case "Contains":
-                    ResolveMethodForContains(exp, fullLambda, sqlBuilder, parameters);
-                    break;
-                case "NotContains":
-                    ResolveMethodForNotContains(exp, fullLambda, sqlBuilder);
-                    break;
-                case "StartsWith":
-                    ResolveMethodForStartsWith(exp, fullLambda, sqlBuilder, parameters);
-                    break;
-                case "EndsWith":
-                    ResolveMethodForEndsWith(exp, fullLambda, sqlBuilder, parameters);
-                    break;
-                case "Equals":
-                    ResolveMethodForEquals(exp, fullLambda, sqlBuilder, parameters);
-                    break;
-                default:
-                    if (exp.Object != null)
-                    {
-                        switch (exp.Object.NodeType)
-                        {
-                            case ExpressionType.Constant:
-                                var val = ResolveDynamicInvoke(exp);
-                                AppendValue(val, sqlBuilder, parameters);
-                                break;
-                            case ExpressionType.MemberAccess:
-                                var memberExp = exp!.Object as MemberExpression;
-                                var columnName = _queryBody.GetColumnName(memberExp, fullLambda);
-                                object arg0 = null;
-                                if (exp.Arguments.Count > 0)
-                                {
-                                    arg0 = ((ConstantExpression)exp.Arguments[0]).Value;
-                                }
-                                object arg1 = null;
-                                if (exp.Arguments.Count > 1)
-                                {
-                                    arg1 = ((ConstantExpression)exp.Arguments[1]).Value;
-                                }
-                                sqlBuilder.AppendFormat("{0}", _dbAdapter.FunctionMapper(exp.Method.Name, columnName, exp.Object.Type, arg0, arg1));
-                                break;
-                        }
-                    }
-                    break;
-            }
-        }
-
-        /// <summary>
-        /// 解析成员初始化表达式
-        /// </summary>
-        private void ResolveMemberInitExpression(Expression exp, LambdaExpression fullLambda, StringBuilder sqlBuilder, IQueryParameters parameters)
-        {
-            if (exp == null || !(exp is MemberInitExpression initExp) || !initExp.Bindings.Any())
-                return;
-
-            for (var i = 0; i < initExp.Bindings.Count; i++)
-            {
-                if (initExp.Bindings[i] is MemberAssignment assignment)
-                {
-                    var descriptor = _queryBody.Joins.First(m => m.EntityDescriptor.EntityType == initExp.Type);
-                    var col = descriptor.EntityDescriptor.Columns.FirstOrDefault(m => m.PropertyInfo.Name.Equals(assignment.Member.Name));
-                    if (col != null)
-                    {
-                        if (_queryBody.Joins.Count > 1)
-                            sqlBuilder.Append($"{_dbAdapter.AppendQuote(descriptor.Alias)}.{_dbAdapter.AppendQuote(col.Name)}");
-                        else
-                            sqlBuilder.Append(_dbAdapter.AppendQuote(col.Name));
-
-                        sqlBuilder.Append(" = ");
-
-                        ResolveExpression(assignment.Expression, fullLambda, sqlBuilder, parameters);
-
-                        if (i < initExp.Bindings.Count - 1)
-                            sqlBuilder.Append(",");
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// 解析Contains方法
-        /// </summary>
-        /// <param name="exp"></param>
-        /// <param name="fullLambda"></param>
-        /// <param name="sqlBuilder"></param>
-        /// <param name="parameters"></param>
-        private void ResolveMethodForContains(MethodCallExpression exp, LambdaExpression fullLambda, StringBuilder sqlBuilder, IQueryParameters parameters)
-        {
-            if (exp.Object is MemberExpression objExp)
-            {
-                //string的Contains方法
-                if (objExp.Expression!.NodeType == ExpressionType.Parameter)
-                {
-                    sqlBuilder.Append(_queryBody.GetColumnName(objExp, fullLambda));
-
-                    string value;
-                    if (exp.Arguments[0] is ConstantExpression c)
-                    {
-                        value = c.Value!.ToString();
-                    }
-                    else
-                    {
-                        value = ResolveDynamicInvoke(exp.Arguments[0]).ToString();
-                    }
-
-                    sqlBuilder.Append(" LIKE ");
-
-                    AppendValue($"%{value}%", sqlBuilder, parameters);
-                }
-                else if (objExp.Type.IsGenericType && exp.Arguments[0] is MemberExpression argExp && argExp.Expression!.NodeType == ExpressionType.Parameter)
-                {
-                    var columnName = _queryBody.GetColumnName(argExp, fullLambda);
-                    ResolveInForGeneric(sqlBuilder, columnName, objExp, argExp.Type);
-                }
-            }
-            else if (exp.Arguments[0].Type.IsArray && exp.Arguments[1] is MemberExpression argExp && argExp.Expression!.NodeType == ExpressionType.Parameter)
-            {
-                var columnName = _queryBody.GetColumnName(argExp, fullLambda);
-                ResolveInForArray(sqlBuilder, columnName, exp.Arguments[0], argExp.Type);
-            }
-        }
-
-        /// <summary>
-        /// 解析NotContains方法
-        /// </summary>
-        /// <param name="exp"></param>
-        /// <param name="fullLambda"></param>
-        /// <param name="sqlBuilder"></param>
-        private void ResolveMethodForNotContains(MethodCallExpression exp, LambdaExpression fullLambda, StringBuilder sqlBuilder)
-        {
-            var fieldType = exp.Arguments[0].Type;
-            var argExp = exp.Arguments[1] as MemberExpression;
-            var columnName = _queryBody.GetColumnName(argExp, fullLambda);
-
-            if (fieldType.IsGenericType)
-            {
-                ResolveInForGeneric(sqlBuilder, columnName, exp.Arguments[0], argExp!.Type, true);
-            }
-            else if (fieldType.IsArray)
-            {
-                ResolveInForArray(sqlBuilder, columnName, exp.Arguments[0], argExp!.Type, true);
-            }
-        }
-
-        private void ResolveInForGeneric(StringBuilder sqlBuilder, string columnName, Expression exp, Type valueType, bool notContainer = false)
-        {
-            var value = ResolveDynamicInvoke(exp);
-            var isValueType = false;
-            var list = new List<string>();
-            if (valueType.IsEnum)
-            {
-                isValueType = true;
-                var valueList = (IEnumerable)value;
-                if (valueList != null)
-                {
-                    foreach (var c in valueList)
-                    {
-                        list.Add(Enum.Parse(valueType, c.ToString()!).ToInt().ToString());
-                    }
-                }
-            }
-            else if (valueType.IsString())
-            {
-                list = value as List<string>;
-            }
-            else if (valueType.IsGuid())
-            {
-                if (value is List<Guid> valueList)
-                {
-                    foreach (var c in valueList)
-                    {
-                        list.Add(c.ToString());
-                    }
-                }
-            }
-            else if (valueType.IsChar())
-            {
-                if (value is List<char> valueList)
-                {
-                    foreach (var c in valueList)
-                    {
-                        list.Add(c.ToString());
-                    }
-                }
-            }
-            else if (valueType.IsDateTime())
-            {
-                if (value is List<DateTime> valueList)
-                {
-                    foreach (var c in valueList)
-                    {
-                        list.Add(c.ToString("yyyy-MM-dd HH:mm:ss"));
-                    }
-                }
-            }
-            else if (valueType.IsInt())
-            {
-                isValueType = true;
-                if (value is List<int> valueList)
-                {
-                    foreach (var c in valueList)
-                    {
-                        list.Add(c.ToString());
-                    }
-                }
-            }
-            else if (valueType.IsLong())
-            {
-                isValueType = true;
-                if (value is List<long> valueList)
-                {
-                    foreach (var c in valueList)
-                    {
-                        list.Add(c.ToString());
-                    }
-                }
-            }
-            else if (valueType.IsDouble())
-            {
-                isValueType = true;
-                if (value is List<double> valueList)
-                {
-                    foreach (var c in valueList)
-                    {
-                        list.Add(c.ToString(CultureInfo.InvariantCulture));
-                    }
-                }
-            }
-            else if (valueType.IsFloat())
-            {
-                isValueType = true;
-                if (value is List<float> valueList)
-                {
-                    foreach (var c in valueList)
-                    {
-                        list.Add(c.ToString(CultureInfo.InvariantCulture));
-                    }
-                }
-            }
-            else if (valueType.IsDecimal())
-            {
-                isValueType = true;
-                if (value is List<decimal> valueList)
-                {
-                    foreach (var c in valueList)
-                    {
-                        list.Add(c.ToString(CultureInfo.InvariantCulture));
-                    }
-                }
-            }
-
-            if (list!.Count < 1)
-                return;
-
-            sqlBuilder.Append(columnName);
-            sqlBuilder.Append(notContainer ? " NOT IN (" : " IN (");
-
-            //值类型不带引号
-            if (isValueType)
-            {
-                for (var i = 0; i < list.Count; i++)
-                {
-                    sqlBuilder.AppendFormat("{0}", list[i]);
-                    if (i != list.Count - 1)
-                    {
-                        sqlBuilder.Append(",");
-                    }
-                }
-            }
-            else
-            {
-                for (var i = 0; i < list.Count; i++)
-                {
-                    sqlBuilder.AppendFormat("'{0}'", list[i].Replace("'", "''"));
-                    if (i != list.Count - 1)
-                    {
-                        sqlBuilder.Append(",");
-                    }
-                }
-            }
-
-            sqlBuilder.Append(")");
-        }
-
-        private void ResolveInForArray(StringBuilder sqlBuilder, string columnName, Expression exp, Type valueType, bool notContainer = false)
-        {
-            var value = ResolveDynamicInvoke(exp);
-            //是否是值类型
-            var isValueType = false;
-            var list = new List<string>();
-            if (valueType.IsEnum)
-            {
-                isValueType = true;
-                var valueList = (IEnumerable)value;
-                foreach (var c in valueList)
-                {
-                    list.Add(Enum.Parse(valueType, c.ToString()!).ToInt().ToString());
-                }
-            }
-            else if (valueType.IsString())
-            {
-                if (value is string[] valueList)
-                {
-                    foreach (var val in valueList)
-                    {
-                        list.Add(val);
-                    }
-                }
-            }
-            else if (valueType.IsGuid())
-            {
-                if (value is Guid[] valueList)
-                {
-                    foreach (var val in valueList)
-                    {
-                        list.Add(val.ToString());
-                    }
-                }
-            }
-            else if (valueType.IsChar())
-            {
-                if (value is char[] valueList)
-                {
-                    foreach (var val in valueList)
-                    {
-                        list.Add(val.ToString());
-                    }
-                }
-            }
-            else if (valueType.IsDateTime())
-            {
-                if (value is DateTime[] valueList)
-                {
-                    foreach (var val in valueList)
-                    {
-                        list.Add(val.ToString("yyyy-MM-dd HH:mm:ss"));
-                    }
-                }
-            }
-            else if (valueType.IsByte())
-            {
-                isValueType = true;
-                if (value is byte[] valueList)
-                {
-                    foreach (var val in valueList)
-                    {
-                        list.Add(val.ToString());
-                    }
-                }
-            }
-            else if (valueType.IsInt())
-            {
-                isValueType = true;
-                if (value is int[] valueList)
-                {
-                    foreach (var val in valueList)
-                    {
-                        list.Add(val.ToString());
-                    }
-                }
-            }
-            else if (valueType.IsLong())
-            {
-                isValueType = true;
-                if (value is long[] valueList)
-                {
-                    foreach (var val in valueList)
-                    {
-                        list.Add(val.ToString());
-                    }
-                }
-            }
-            else if (valueType.IsDouble())
-            {
-                isValueType = true;
-                if (value is double[] valueList)
-                {
-                    foreach (var val in valueList)
-                    {
-                        list.Add(val.ToString(CultureInfo.InvariantCulture));
-                    }
-                }
-            }
-            else if (valueType.IsShort())
-            {
-                isValueType = true;
-                if (value is short[] valueList)
-                {
-                    foreach (var val in valueList)
-                    {
-                        list.Add(val.ToString());
-                    }
-                }
-            }
-            else if (valueType.IsFloat())
-            {
-                isValueType = true;
-                if (value is float[] valueList)
-                {
-                    foreach (var val in valueList)
-                    {
-                        list.Add(val.ToString(CultureInfo.InvariantCulture));
-                    }
-                }
-            }
-            else if (valueType.IsDecimal())
-            {
-                isValueType = true;
-                if (value is decimal[] valueList)
-                {
-                    foreach (var val in valueList)
-                    {
-                        list.Add(val.ToString(CultureInfo.InvariantCulture));
-                    }
-                }
-            }
-
-            if (list.Count < 1)
-                return;
-
-            sqlBuilder.Append(columnName);
-            sqlBuilder.Append(notContainer ? " NOT IN (" : " IN (");
-
-            //值类型不带引号
-            if (isValueType)
-            {
-                for (var i = 0; i < list.Count; i++)
-                {
-                    sqlBuilder.AppendFormat("{0}", list[i]);
-                    if (i != list.Count - 1)
-                    {
-                        sqlBuilder.Append(",");
-                    }
-                }
-            }
-            else
-            {
-                for (var i = 0; i < list.Count; i++)
-                {
-                    sqlBuilder.AppendFormat("'{0}'", list[i].Replace("'", "''"));
-                    if (i != list.Count - 1)
-                    {
-                        sqlBuilder.Append(",");
-                    }
-                }
-            }
-
-            sqlBuilder.Append(")");
-        }
-
-        /// <summary>
-        /// 解析StartsWith方法
-        /// </summary>
-        private void ResolveMethodForStartsWith(MethodCallExpression exp, LambdaExpression fullLambda, StringBuilder sqlBuilder, IQueryParameters parameters)
-        {
-            if (exp.Object is MemberExpression objExp && objExp.Expression!.NodeType == ExpressionType.Parameter)
-            {
-                sqlBuilder.Append(_queryBody.GetColumnName(objExp, fullLambda));
-
-                string value;
-                if (exp.Arguments[0] is ConstantExpression c)
-                {
-                    value = c.Value!.ToString();
-                }
-                else
-                {
-                    value = ResolveDynamicInvoke(exp.Arguments[0]).ToString();
-                }
-
-                sqlBuilder.Append(" LIKE ");
-
-                AppendValue($"{value}%", sqlBuilder, parameters);
-            }
-        }
-
-        /// <summary>
-        /// 解析EndsWith方法
-        /// </summary>
-        private void ResolveMethodForEndsWith(MethodCallExpression exp, LambdaExpression fullLambda, StringBuilder sqlBuilder, IQueryParameters parameters)
-        {
-            if (exp.Object is MemberExpression objExp && objExp.Expression!.NodeType == ExpressionType.Parameter)
-            {
-                sqlBuilder.Append(_queryBody.GetColumnName(objExp, fullLambda));
-
-                string value;
-                if (exp.Arguments[0] is ConstantExpression c)
-                {
-                    value = c.Value!.ToString();
-                }
-                else
-                {
-                    value = ResolveDynamicInvoke(exp.Arguments[0]).ToString();
-                }
-
-                sqlBuilder.Append(" LIKE ");
-
-                AppendValue($"%{value}", sqlBuilder, parameters);
-            }
-        }
-
-        /// <summary>
-        /// 解析Equals方法
-        /// </summary>
-        private void ResolveMethodForEquals(MethodCallExpression exp, LambdaExpression fullLambda, StringBuilder sqlBuilder, IQueryParameters parameters)
-        {
-            if (exp.Object is MemberExpression objExp && objExp.Expression!.NodeType == ExpressionType.Parameter)
-            {
-                sqlBuilder.Append(_queryBody.GetColumnName(objExp, fullLambda));
-
-                sqlBuilder.Append(" = ");
-
-                var arg = exp.Arguments[0];
-                if (arg is ConstantExpression c)
-                {
-                    AppendValue(c.Value!.ToString(), sqlBuilder, parameters);
-                }
-                else if (arg.NodeType == ExpressionType.MemberAccess)
-                {
-                    ResolveMemberExpression(arg as MemberExpression, fullLambda, sqlBuilder, parameters);
-                }
-                else if (arg.NodeType == ExpressionType.Convert)
-                {
-                    ResolveExpression((arg as UnaryExpression)!.Operand, fullLambda, sqlBuilder, parameters);
-                }
-                else
-                {
-                    AppendValue(ResolveDynamicInvoke(arg).ToString(), sqlBuilder, parameters);
-                }
-            }
-        }
-
-        /// <summary>
-        /// 解析动态代码
-        /// </summary>
-        /// <param name="exp"></param>
-        private object ResolveDynamicInvoke(Expression exp)
-        {
-            var value = Expression.Lambda(exp).Compile().DynamicInvoke();
-            if (exp.Type.IsEnum)
-                value = value.ToInt();
-
-            return value;
-        }
-
-        #endregion
-
-        /// <summary>
-        /// 附加值
-        /// </summary>
-        private void AppendValue(object value, StringBuilder sqlBuilder, IQueryParameters parameters)
-        {
-            if (value == null)
-            {
-                var len = sqlBuilder.Length;
-                if (sqlBuilder[len - 1] == ' ' && sqlBuilder[len - 2] == '>' && sqlBuilder[len - 3] == '<')
-                {
-                    sqlBuilder.Remove(len - 3, 3);
-                    sqlBuilder.Append("IS NOT NULL");
-                    return;
-                }
-
-                if (sqlBuilder[len - 1] == ' ' && sqlBuilder[len - 2] == '=')
-                {
-                    sqlBuilder.Remove(len - 2, 2);
-                    sqlBuilder.Append("IS NULL");
-                }
-
-                return;
-            }
-
-            if (_useParameters)
-            {
-                //使用参数化
-                var pName = parameters.Add(value);
-                sqlBuilder.Append(_dbAdapter.AppendParameter(pName));
-            }
-            else
-            {
-                var type = value.GetType();
-                //不使用参数化
-                if (type.IsNullable())
-                {
-                    type = Nullable.GetUnderlyingType(type);
-                }
-
-                if (type!.IsEnum)
-                {
-                    sqlBuilder.AppendFormat("{0}", value.ToInt());
-                }
-                else if (type.IsBool())
-                {
-                    sqlBuilder.AppendFormat("{0}", value.ToBool() ? _dbAdapter.BooleanTrueValue : _dbAdapter.BooleanFalseValue);
-                }
-                else if (type.IsDateTime())
-                {
-                    sqlBuilder.AppendFormat("'{0:yyyy-MM-dd HH:mm:ss}'", value);
-                }
-                else if (type.IsString() || type.IsGuid())
-                {
-                    sqlBuilder.AppendFormat("'{0}'", value);
-                }
-                else
-                {
-                    sqlBuilder.AppendFormat("{0}", value);
-                }
-            }
-        }
     }
 }

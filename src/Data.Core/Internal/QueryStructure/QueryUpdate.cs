@@ -1,6 +1,6 @@
 ﻿using System.Linq.Expressions;
 
-namespace Mkh.Data.Core.Queryable.Internal
+namespace Mkh.Data.Core.Internal.QueryStructure
 {
     /// <summary>
     /// 查询更新信息

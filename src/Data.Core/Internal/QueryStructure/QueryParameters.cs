@@ -4,7 +4,7 @@ using System.Data;
 using Dapper;
 using Mkh.Data.Abstractions.Queryable;
 
-namespace Mkh.Data.Core.Queryable.Internal
+namespace Mkh.Data.Core.Internal.QueryStructure
 {
     /// <summary>
     /// 参数集合

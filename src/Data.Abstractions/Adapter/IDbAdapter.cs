@@ -117,10 +117,9 @@ namespace Mkh.Data.Abstractions.Adapter
         /// <param name="sourceName">源名称</param>
         /// <param name="columnName">列名称</param>
         /// <param name="dataType">数据类型</param>
-        /// <param name="arg0">第一个参数</param>
-        /// <param name="arg1">第二个参数</param>
+        /// <param name="args">参数数组</param>
         /// <returns></returns>
-        string FunctionMapper(string sourceName, string columnName, Type dataType = null, object arg0 = null, object arg1 = null);
+        string FunctionMapper(string sourceName, string columnName, Type dataType = null, object[] args = null);
 
         #endregion
     }

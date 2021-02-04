@@ -1,6 +1,6 @@
 ﻿using System.Linq.Expressions;
 
-namespace Mkh.Data.Core.Queryable.Internal
+namespace Mkh.Data.Core.Internal.QueryStructure
 {
     /// <summary>
     /// 查询选择信息
@@ -43,7 +43,6 @@ namespace Mkh.Data.Core.Queryable.Internal
     /// </summary>
     internal enum QuerySelectMode
     {
-        UnKnown,
         /// <summary>
         /// Lambda
         /// </summary>

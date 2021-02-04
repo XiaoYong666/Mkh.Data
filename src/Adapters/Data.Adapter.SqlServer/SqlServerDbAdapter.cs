@@ -215,12 +215,7 @@ namespace Mkh.Data.Adapter.SqlServer
             }
         }
 
-        public override string Method2Func(MethodCallExpression methodCallExpression, string columnName)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override string Property2Func(string methodName, string columnName)
+        public override string FunctionMapper(string sourceName, string columnName, Type dataType = null, object[] args = null)
         {
             throw new NotImplementedException();
         }

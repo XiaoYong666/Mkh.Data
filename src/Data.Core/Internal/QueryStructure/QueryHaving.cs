@@ -1,17 +1,16 @@
 ﻿using System.Linq.Expressions;
-using Mkh.Data.Abstractions.Pagination;
 
-namespace Mkh.Data.Core.Queryable.Internal
+namespace Mkh.Data.Core.Internal.QueryStructure
 {
     /// <summary>
-    /// 查询排序
+    /// 聚合过滤
     /// </summary>
-    internal class QuerySort
+    internal class QueryHaving
     {
         /// <summary>
         /// 模式
         /// </summary>
-        public QuerySortMode Mode { get; set; }
+        public QueryHavingMode Mode { get; set; }
 
         /// <summary>
         /// 表达式
@@ -23,19 +22,27 @@ namespace Mkh.Data.Core.Queryable.Internal
         /// </summary>
         public string Sql { get; set; }
 
-        /// <summary>
-        /// 排序类型
-        /// </summary>
-        public SortType Type { get; set; }
+
+        public QueryHaving(LambdaExpression lambda)
+        {
+            Mode = QueryHavingMode.Lambda;
+            Lambda = lambda;
+        }
+
+        public QueryHaving(string sql)
+        {
+            Mode = QueryHavingMode.Sql;
+            Sql = sql;
+        }
     }
 
     /// <summary>
-    /// 查询排序模式
+    /// 查询条件类型
     /// </summary>
-    internal enum QuerySortMode
+    public enum QueryHavingMode
     {
         /// <summary>
-        /// 拉姆达表达式
+        /// Lambda
         /// </summary>
         Lambda,
         /// <summary>

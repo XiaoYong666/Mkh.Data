@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Mkh.Data.Abstractions.Entities;
 using Mkh.Data.Abstractions.Pagination;
+using Mkh.Data.Abstractions.Queryable.Grouping;
 
 namespace Mkh.Data.Abstractions.Queryable
 {
@@ -300,7 +301,7 @@ namespace Mkh.Data.Abstractions.Queryable
         IQueryable<TEntity, TEntity2> SelectExclude<TResult>(Expression<Func<TEntity, TEntity2, TResult>> expression);
 
         #endregion
-        
+
         #region ==Limit==
 
         /// <summary>
@@ -353,7 +354,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// 查询列表，返回指定类型
         /// </summary>
         /// <returns></returns>
-        Task<IList<TEntity>> List();
+        Task<IList<TEntity>> ToList();
 
         #endregion
 
@@ -363,14 +364,14 @@ namespace Mkh.Data.Abstractions.Queryable
         /// 分页查询，返回实体类型
         /// </summary>
         /// <returns></returns>
-        Task<IList<TEntity>> Pagination();
+        Task<IList<TEntity>> ToPagination();
 
         /// <summary>
         /// 分页查询，返回实体类型
         /// </summary>
         /// <param name="paging">分页对象</param>
         /// <returns></returns>
-        Task<IList<TEntity>> Pagination(Paging paging);
+        Task<IList<TEntity>> ToPagination(Paging paging);
 
         #endregion
 
@@ -380,7 +381,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// 查询第一条数据，返回指定类型
         /// </summary>
         /// <returns></returns>
-        Task<TEntity> First();
+        Task<TEntity> ToFirst();
 
         #endregion
 
@@ -410,25 +411,31 @@ namespace Mkh.Data.Abstractions.Queryable
         /// 获取最大值
         /// </summary>
         /// <returns></returns>
-        Task<TResult> Max<TResult>(Expression<Func<TEntity, TEntity2, TResult>> expression);
+        Task<TResult> ToMax<TResult>(Expression<Func<TEntity, TEntity2, TResult>> expression);
 
         /// <summary>
         /// 获取最小值
         /// </summary>
         /// <returns></returns>
-        Task<TResult> Min<TResult>(Expression<Func<TEntity, TEntity2, TResult>> expression);
+        Task<TResult> ToMin<TResult>(Expression<Func<TEntity, TEntity2, TResult>> expression);
 
         /// <summary>
         /// 求和
         /// </summary>
         /// <returns></returns>
-        Task<TResult> Sum<TResult>(Expression<Func<TEntity, TEntity2, TResult>> expression);
+        Task<TResult> ToSum<TResult>(Expression<Func<TEntity, TEntity2, TResult>> expression);
 
         /// <summary>
         /// 求平均值
         /// </summary>
         /// <returns></returns>
-        Task<TResult> Avg<TResult>(Expression<Func<TEntity, TEntity2, TResult>> expression);
+        Task<TResult> ToAvg<TResult>(Expression<Func<TEntity, TEntity2, TResult>> expression);
+
+        #endregion
+
+        #region ==GroupBy==
+
+        IGroupingQueryable<TResult, TEntity, TEntity2> GroupBy<TResult>(Expression<Func<TEntity, TEntity2, TResult>> expression);
 
         #endregion
 

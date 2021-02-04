@@ -3,12 +3,12 @@ using System.Data;
 using System.Threading.Tasks;
 using Mkh.Data.Abstractions.Pagination;
 
-namespace Mkh.Data.Abstractions.Queryable
+namespace Mkh.Data.Abstractions.Queryable.Grouping
 {
     /// <summary>
-    /// 查询构造器
+    /// 分组查询
     /// </summary>
-    public interface IQueryable
+    public interface IGroupingQueryable
     {
         #region ==List==
 
@@ -162,77 +162,15 @@ namespace Mkh.Data.Abstractions.Queryable
         string ToFirstSqlNotUseParameters();
 
         #endregion
+    }
 
-        #region ==Count==
+    /// <summary>
+    /// 分组查询对象
+    /// </summary>
+    public interface IGrouping<out TKey>
+    {
+        TKey Key { get; }
 
-        /// <summary>
-        /// 查询数量
-        /// </summary>
-        /// <returns></returns>
-        Task<long> ToCount();
-
-        /// <summary>
-        /// 查询数量的SQL
-        /// </summary>
-        /// <returns></returns>
-        string ToCountSql();
-
-        /// <summary>
-        /// 查询数量的SQL，并返回参数
-        /// </summary>
-        /// <param name="parameters"></param>
-        /// <returns></returns>
-        string ToCountSql(out IQueryParameters parameters);
-
-        /// <summary>
-        /// 查询数量的SQL，并设置参数
-        /// </summary>
-        /// <param name="parameters"></param>
-        /// <returns></returns>
-        string ToCountSql(IQueryParameters parameters);
-
-        /// <summary>
-        /// 查询数量的SQL，并且不使用参数化
-        /// </summary>
-        /// <returns></returns>
-        string ToCountSqlNotUseParameters();
-
-        #endregion
-
-        #region ==Exists==
-
-        /// <summary>
-        /// 判断是否存在
-        /// </summary>
-        /// <returns></returns>
-        Task<bool> ToExists();
-
-        /// <summary>
-        /// 判断是否存在的SQL
-        /// </summary>
-        /// <returns></returns>
-        string ToExistsSql();
-
-        /// <summary>
-        /// 判断是否存在的SQL，并返回参数
-        /// </summary>
-        /// <param name="parameters"></param>
-        /// <returns></returns>
-        string ToExistsSql(out IQueryParameters parameters);
-
-        /// <summary>
-        /// 判断是否存在的SQL，并设置参数
-        /// </summary>
-        /// <param name="parameters"></param>
-        /// <returns></returns>
-        string ToExistsSql(IQueryParameters parameters);
-
-        /// <summary>
-        /// 判断是否存在的SQL，并且不使用参数化
-        /// </summary>
-        /// <returns></returns>
-        string ToExistsSqlNotUseParameters();
-
-        #endregion
+        long Count();
     }
 }

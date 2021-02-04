@@ -52,7 +52,7 @@ namespace Mkh.Data.Adapter.MySql
                 sqlBuilder.Append(having);
 
             if (sort.NotNull())
-                sqlBuilder.AppendFormat(" ORDER BY {0}", sort);
+                sqlBuilder.AppendFormat("{0}", sort);
 
             if (skip == 0)
                 sqlBuilder.AppendFormat(" LIMIT {0}", take);
@@ -204,20 +204,20 @@ namespace Mkh.Data.Adapter.MySql
 
         #region ==函数映射==
 
-        public override string FunctionMapper(string sourceName, string columnName, Type dataType = null, object arg0 = null, object arg1 = null)
+        public override string FunctionMapper(string sourceName, string columnName, Type dataType = null, object[] args = null)
         {
             switch (sourceName)
             {
                 case "Substring":
-                    return Mapper_Substring(columnName, arg0, arg1);
+                    return Mapper_Substring(columnName, args[0], args.Length > 1 ? args[1] : null);
                 case "ToString":
-                    if (dataType.IsDateTime() && arg0 != null)
+                    if (dataType.IsDateTime() && args[0] != null)
                     {
-                        return Mapper_DatetimeToString(columnName, arg0);
+                        return Mapper_DatetimeToString(columnName, args[0]);
                     }
                     return string.Empty;
                 case "Replace":
-                    return $"REPLACE({columnName},'{arg0}','{arg1}')";
+                    return $"REPLACE({columnName},'{args[0]}','{args[1]}')";
                 case "ToLower":
                     return $"LOWER({columnName})";
                 case "ToUpper":

@@ -5,7 +5,6 @@ using Data.Common.Test.Domain.Article;
 using Microsoft.Extensions.DependencyInjection;
 using Mkh.Data.Abstractions.Extensions;
 using Mkh.Data.Abstractions.Pagination;
-using Mkh.Data.Abstractions.Queryable;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -14,6 +13,9 @@ namespace Data.Adapter.MySql.Test
     public class RepositoryTest : BaseTest
     {
         private readonly IArticleRepository _repository;
+
+        private const string Select =
+            "SELECT `Id` AS `Id`,`CategoryId` AS `CategoryId`,`Title` AS `Title`,`Content` AS `Content`,`IsPublished` AS `Published`,`PublishedTime` AS `PublishedTime`,`Deleted` AS `Deleted`,`DeletedBy` AS `DeletedBy`,`Deleter` AS `Deleter`,`DeletedTime` AS `DeletedTime`,`CreatedBy` AS `CreatedBy`,`Creator` AS `Creator`,`CreatedTime` AS `CreatedTime`,`ModifiedBy` AS `ModifiedBy`,`Modifier` AS `Modifier`,`ModifiedTime` AS `ModifiedTime` FROM `Article`";
 
         public RepositoryTest(ITestOutputHelper output) : base(output)
         {
@@ -73,11 +75,11 @@ namespace Data.Adapter.MySql.Test
             Assert.Null(article1);
 
             //条件删除
-            var sql = _repository.Find(m => m.Id > 10).DeleteSql();
-            //DELETE FROM `Article`  WHERE `Id` > @P1 AND `Deleted` = 0
+            var sql = _repository.Find(m => m.Id > 10).ToDeleteSql();
+            Assert.Equal("DELETE FROM `Article`  WHERE `Id` > @P1 AND `Deleted` = 0", sql);
 
-            sql = _repository.Find(m => m.Id > 10).DeleteSqlNotUseParameters();
-            //DELETE FROM `Article`  WHERE `Id` > 10 AND `Deleted` = 0
+            sql = _repository.Find(m => m.Id > 10).ToDeleteSqlNotUseParameters();
+            Assert.Equal("DELETE FROM `Article`  WHERE `Id` > 10 AND `Deleted` = 0", sql);
         }
 
         [Fact]
@@ -110,21 +112,12 @@ namespace Data.Adapter.MySql.Test
             Assert.Equal("OLDLI", article1.Modifier);
 
             //条件批量更新
-            result = await _repository.Find(m => m.Id > 10).Update(m => new ArticleEntity { Title = "条件更新" });
+            result = await _repository.Find(m => m.Id > 10).ToUpdate(m => new ArticleEntity { Title = "条件更新" });
 
             Assert.True(result);
 
-            var sql = _repository.Find(m => m.Id > 10).UpdateSql(m => new ArticleEntity { Title = "条件更新" });
-            /*
-             * UPDATE `Article` SET `Title` = '条件更新',`ModifiedBy` = @P1,`Modifier` = @P2,
-             * `ModifiedTime` = @P3 WHERE `Id` > '10' AND `Deleted` = 0;
-             */
-
-            sql = _repository.Find(m => m.Id > 10).UpdateSqlNotUseParameters(m => new ArticleEntity { Title = "条件更新" });
-            /*
-             * UPDATE `Article` SET `Title` = '条件更新',`ModifiedBy` = '49f08cfd-8e0d-771b-a2f3-2639a62ca2fa',
-             * `Modifier` = 'OLDLI',`ModifiedTime` = '2021-01-28 00:17:42' WHERE `Id` > '10' AND `Deleted` = 0;
-             */
+            var sql = _repository.Find(m => m.Id > 10).ToUpdateSql(m => new ArticleEntity { Title = "条件更新" });
+            Assert.Equal("UPDATE `Article` SET `Title` = @P1,`ModifiedBy` = @P2,`Modifier` = @P3,`ModifiedTime` = @P4 WHERE `Id` > @P5 AND `Deleted` = 0;", sql);
         }
 
         [Fact]
@@ -149,12 +142,8 @@ namespace Data.Adapter.MySql.Test
 
             Assert.Null(article1);
 
-            var sql = _repository.Find(m => m.Id > 0).SoftDeleteSql();
-            //UPDATE `Article` SET `Deleted` = 1,`DeletedTime` = P1,`DeletedBy` = P2 `Deleter` = P3  WHERE `Id` > @P4 AND `Deleted` = 0
-
-            sql = _repository.Find(m => m.Id > 0).SoftDeleteSqlNotUseParameters();
-            //UPDATE `Article` SET `Deleted` = 1,`DeletedTime` = '2021-01-28 13:46:48',`DeletedBy` = '49f08cfd-8e0d-771b-a2f3-2639a62ca2fa',
-            //`Deleter` = 'OLDLI' WHERE `Id` > 0 AND `Deleted` = 0
+            var sql = _repository.Find(m => m.Id > 0).ToSoftDeleteSql();
+            Assert.Equal("UPDATE `Article` SET `Deleted` = 1,`DeletedTime` = @P1,`DeletedBy` = @P2,`Deleter` = @P3 WHERE `Id` > @P4 AND `Deleted` = 0", sql);
         }
 
         [Fact]
@@ -176,10 +165,10 @@ namespace Data.Adapter.MySql.Test
             exists = await _repository.Exists(100000);
             Assert.False(exists);
 
-            exists = await _repository.Find(m => m.Id == 1).Exists();
+            exists = await _repository.Find(m => m.Id == 1).ToExists();
             Assert.True(exists);
 
-            exists = await _repository.Find(m => m.Id == 1000).Exists();
+            exists = await _repository.Find(m => m.Id == 1000).ToExists();
             Assert.False(exists);
         }
 
@@ -204,54 +193,40 @@ namespace Data.Adapter.MySql.Test
         {
             await ClearAndAdd();
 
-            var list = await _repository.Find().List();
+            var list = await _repository.Find().ToList();
 
             Assert.Equal(10, list.Count);
 
-            list = await _repository.Find(m => m.Id > 5).List();
+            list = await _repository.Find(m => m.Id > 5).OrderBy(m => m.Id).ToList();
             Assert.Equal("mkh10", list[4].Title);
 
-            list = await _repository.Find(m => m.Id == 7).List();
+            list = await _repository.Find(m => m.Id == 7).ToList();
             Assert.Single(list);
             Assert.Equal("mkh7", list.First().Title);
 
-            list = await _repository.Find(m => m.Title.Contains("9")).List();
+            list = await _repository.Find(m => m.Title.Contains("9")).ToList();
             Assert.Single(list);
 
-            list = await _repository.Find(m => m.Title.StartsWith("mkh")).List();
+            list = await _repository.Find(m => m.Title.StartsWith("mkh")).ToList();
             Assert.Equal(6, list.Count);
 
-            list = await _repository.Find(m => m.Title.EndsWith("9") || m.Title.EndsWith("1")).List();
+            list = await _repository.Find(m => m.Title.EndsWith("9") || m.Title.EndsWith("1")).ToList();
             Assert.Equal(2, list.Count);
 
             var ids = new List<int> { 3, 5, 9 };
-            list = await _repository.Find(m => ids.Contains(m.Id)).List();
+            list = await _repository.Find(m => ids.Contains(m.Id)).ToList();
             Assert.Equal(3, list.Count);
             Assert.Equal("mkh5", list[1].Title);
 
-            list = await _repository.Find(m => ids.NotContains(m.Id)).List();
+            list = await _repository.Find(m => ids.NotContains(m.Id)).ToList();
             Assert.Equal(7, list.Count);
             Assert.Equal("test1", list[0].Title);
 
-            var sql = _repository.Find(m => m.Id > 10).ListSql(out IQueryParameters parameters);
-            /*
-             * SELECT `Id` AS `Id`,`CategoryId` AS `CategoryId`,`Title` AS `Title`,`Content` AS `Content`,
-             * `IsPublished` AS `Published`,`PublishedTime` AS `PublishedTime`,`Deleted` AS `Deleted`,
-             * `DeletedBy` AS `DeletedBy`,`Deleter` AS `Deleter`,`DeletedTime` AS `DeletedTime`,
-             * `CreatedBy` AS `CreatedBy`,`Creator` AS `Creator`,`CreatedTime` AS `CreatedTime`,
-             * `ModifiedBy` AS `ModifiedBy`,`Modifier` AS `Modifier`,`ModifiedTime` AS `ModifiedTime`
-             * FROM `Article` WHERE `Id` > @P1 AND `Deleted` = 0
-             */
+            var sql = _repository.Find(m => m.Id > 10).ToListSql();
+            Assert.Equal(Select + " WHERE `Id` > @P1 AND `Deleted` = 0", sql);
 
-            sql = _repository.Find(m => m.Id > 10).ListSqlNotUseParameters();
-            /*
-             * SELECT `Id` AS `Id`,`CategoryId` AS `CategoryId`,`Title` AS `Title`,`Content` AS `Content`,
-             * `IsPublished` AS `Published`,`PublishedTime` AS `PublishedTime`,`Deleted` AS `Deleted`,
-             * `DeletedBy` AS `DeletedBy`,`Deleter` AS `Deleter`,`DeletedTime` AS `DeletedTime`,
-             * `CreatedBy` AS `CreatedBy`,`Creator` AS `Creator`,`CreatedTime` AS `CreatedTime`,
-             * `ModifiedBy` AS `ModifiedBy`,`Modifier` AS `Modifier`,`ModifiedTime` AS `ModifiedTime`
-             * FROM `Article` WHERE `Id` > 10 AND `Deleted` = 0
-             */
+            sql = _repository.Find(m => m.Id > 10).ToListSqlNotUseParameters();
+            Assert.Equal(Select + " WHERE `Id` > 10 AND `Deleted` = 0", sql);
         }
 
         [Fact]
@@ -259,40 +234,35 @@ namespace Data.Adapter.MySql.Test
         {
             await ClearAndAdd(20);
 
-            var list = await _repository.Find().Pagination();
+            var list = await _repository.Find().ToPagination();
 
             Assert.Equal(15, list.Count);
 
             var paging = new Paging(2, 10);
-            list = await _repository.Find().Pagination(paging);
+            list = await _repository.Find().ToPagination(paging);
 
             Assert.Equal(20, paging.TotalCount);
             Assert.Equal("mkh11", list[0].Title);
 
-            list = await _repository.Find(m => m.Id > 5).Pagination(new Paging(2, 3));
+            list = await _repository.Find(m => m.Id > 5).ToPagination(new Paging(2, 3));
             Assert.Equal("test9", list[0].Title);
         }
 
         [Fact]
-        public async void FirstTest()
+        public void FirstTest()
         {
-            await ClearAndAdd();
+            var sql = _repository.Find(m => m.Title == "test3").ToFirstSql();
 
-            var first = await _repository.Find(m => m.Title == "test3").First();
-
-            Assert.NotNull(first);
-            Assert.Equal(3, first.Id);
+            Assert.Equal(Select + " WHERE `Title` = @P1 AND `Deleted` = 0 LIMIT 1", sql);
         }
 
         [Fact]
-        public async void NotContainsTest()
+        public void NotContainsTest()
         {
-            await ClearAndAdd();
-
             var ids = new List<int>();
-            var list = await _repository.Find(m => ids.NotContains(m.Id)).List();
+            var sql = _repository.Find(m => ids.NotContains(m.Id)).ToListSql();
 
-            Assert.Equal(10, list.Count);
+            Assert.Equal(Select + " WHERE `Deleted` = 0", sql);
         }
 
         [Fact]
@@ -300,23 +270,23 @@ namespace Data.Adapter.MySql.Test
         {
             await ClearAndAdd();
 
-            var maxId = await _repository.Find().Max(m => m.Id);
+            var maxId = await _repository.Find().ToMax(m => m.Id);
 
             Assert.Equal(10, maxId);
 
-            maxId = await _repository.Find(m => m.Id < 8).Max(m => m.Id);
+            maxId = await _repository.Find(m => m.Id < 8).ToMax(m => m.Id);
 
             Assert.Equal(7, maxId);
 
-            var minId = await _repository.Find(m => m.Id > 5).Min(m => m.Id);
+            var minId = await _repository.Find(m => m.Id > 5).ToMin(m => m.Id);
 
             Assert.Equal(6, minId);
 
-            var avg = await _repository.Find(m => m.Id > 5 && m.Id < 10).Avg<decimal>(m => m.Id);
+            var avg = await _repository.Find(m => m.Id > 5 && m.Id < 10).ToAvg<decimal>(m => m.Id);
 
             Assert.Equal(7.5M, avg);
 
-            var sum = await _repository.Find(m => m.Id > 5 && m.Id < 10).Sum(m => m.Id);
+            var sum = await _repository.Find(m => m.Id > 5 && m.Id < 10).ToSum(m => m.Id);
 
             Assert.Equal(30, sum);
         }
@@ -327,12 +297,11 @@ namespace Data.Adapter.MySql.Test
             await ClearAndAdd();
 
             var query = _repository.Find(m => m.Id > 5);
-            var list =await query.List();
+            var list = await query.ToList();
             Assert.Equal(5, list.Count);
 
-
             var query1 = query.Copy();
-            var list1 = await query1.List();
+            var list1 = await query1.ToList();
             Assert.Equal(5, list1.Count);
         }
     }

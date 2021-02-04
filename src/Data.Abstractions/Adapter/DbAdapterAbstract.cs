@@ -61,6 +61,6 @@ namespace Mkh.Data.Abstractions.Adapter
 
         public abstract void ResolveColumn(IColumnDescriptor columnDescriptor);
 
-        public abstract string FunctionMapper(string sourceName, string columnName, Type dataType = null, object arg0 = null, object arg1 = null);
+        public abstract string FunctionMapper(string sourceName, string columnName, Type dataType = null, object[] args = null);
     }
 }

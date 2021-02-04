@@ -5,12 +5,12 @@ using System.Threading.Tasks;
 using Mkh.Data.Abstractions.Entities;
 using Mkh.Data.Abstractions.Pagination;
 using Mkh.Data.Abstractions.Queryable;
-using Mkh.Data.Core.Queryable.Internal;
+using Mkh.Data.Core.Internal.QueryStructure;
 using IQueryable = Mkh.Data.Abstractions.Queryable.IQueryable;
 
 namespace Mkh.Data.Core.Queryable
 {
-    internal class Queryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5> : QueryableAbstract, IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5> where TEntity : IEntity, new() where TEntity2 : IEntity, new() where TEntity3 : IEntity, new() where TEntity4 : IEntity, new() where TEntity5 : IEntity, new()
+    internal class Queryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5> : Queryable, IQueryable<TEntity, TEntity2, TEntity3, TEntity4, TEntity5> where TEntity : IEntity, new() where TEntity2 : IEntity, new() where TEntity3 : IEntity, new() where TEntity4 : IEntity, new() where TEntity5 : IEntity, new()
     {
         public Queryable(QueryBody queryBody, JoinType joinType, Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, bool>> onExpression, string tableName, bool noLock) : base(queryBody)
         {
@@ -302,32 +302,32 @@ namespace Mkh.Data.Core.Queryable
 
         #region ==List==
 
-        public Task<IList<TEntity>> List()
+        public Task<IList<TEntity>> ToList()
         {
-            return List<TEntity>();
+            return ToList<TEntity>();
         }
 
         #endregion
 
         #region ==Pagination==
 
-        public Task<IList<TEntity>> Pagination()
+        public Task<IList<TEntity>> ToPagination()
         {
-            return Pagination<TEntity>();
+            return ToPagination<TEntity>();
         }
 
-        public Task<IList<TEntity>> Pagination(Paging paging)
+        public Task<IList<TEntity>> ToPagination(Paging paging)
         {
-            return Pagination<TEntity>(paging);
+            return ToPagination<TEntity>(paging);
         }
 
         #endregion
 
         #region ==First==
 
-        public Task<TEntity> First()
+        public Task<TEntity> ToFirst()
         {
-            return First<TEntity>();
+            return ToFirst<TEntity>();
         }
 
         #endregion
@@ -354,22 +354,22 @@ namespace Mkh.Data.Core.Queryable
 
         #region ==Function==
 
-        public Task<TResult> Max<TResult>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TResult>> expression)
+        public Task<TResult> ToMax<TResult>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TResult>> expression)
         {
             return base.Max<TResult>(expression);
         }
 
-        public Task<TResult> Min<TResult>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TResult>> expression)
+        public Task<TResult> ToMin<TResult>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TResult>> expression)
         {
             return base.Min<TResult>(expression);
         }
 
-        public Task<TResult> Sum<TResult>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TResult>> expression)
+        public Task<TResult> ToSum<TResult>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TResult>> expression)
         {
             return base.Sum<TResult>(expression);
         }
 
-        public Task<TResult> Avg<TResult>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TResult>> expression)
+        public Task<TResult> ToAvg<TResult>(Expression<Func<TEntity, TEntity2, TEntity3, TEntity4, TEntity5, TResult>> expression)
         {
             return base.Avg<TResult>(expression);
         }

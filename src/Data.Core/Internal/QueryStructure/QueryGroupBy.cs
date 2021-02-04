@@ -1,4 +1,4 @@
-﻿namespace Mkh.Data.Core.Queryable.Internal
+﻿namespace Mkh.Data.Core.Internal.QueryStructure
 {
     /// <summary>
     /// 分组查询信息
@@ -19,5 +19,6 @@
         /// 连接信息
         /// </summary>
         public QueryJoin Join { get; set; }
+
     }
 }

@@ -18,7 +18,7 @@ namespace Data.Adapter.MySql.Test
         [Fact]
         public void Test1()
         {
-            var sql = _repository.Find().LeftJoin<CategoryEntity>((t1, t2) => t1.CategoryId == t2.Id).Select((t1, t2) => new { t1 }).ListSql();
+            var sql = _repository.Find().LeftJoin<CategoryEntity>((t1, t2) => t1.CategoryId == t2.Id).Select((t1, t2) => new { t1 }).ToListSql();
             //SELECT T1.`Id`            AS `Id`,
             //        T1.`CategoryId`    AS `CategoryId`,
             //        T1.`Title`         AS `Title`,

@@ -6,11 +6,13 @@ using Mkh.Data.Abstractions;
 using Mkh.Data.Abstractions.Entities;
 using Mkh.Data.Abstractions.Pagination;
 using Mkh.Data.Abstractions.Queryable;
-using Mkh.Data.Core.Queryable.Internal;
+using Mkh.Data.Abstractions.Queryable.Grouping;
+using Mkh.Data.Core.Internal.QueryStructure;
+using Mkh.Data.Core.Queryable.Grouping;
 
 namespace Mkh.Data.Core.Queryable
 {
-    internal class Queryable<TEntity> : QueryableAbstract, IQueryable<TEntity> where TEntity : IEntity, new()
+    internal class Queryable<TEntity> : Queryable, IQueryable<TEntity> where TEntity : IEntity, new()
     {
         public Queryable(IRepository repository, Expression<Func<TEntity, bool>> expression, bool noLock) : base(repository)
         {
@@ -319,12 +321,12 @@ namespace Mkh.Data.Core.Queryable
 
         #region ==更新==
 
-        public async Task<bool> Update(Expression<Func<TEntity, TEntity>> expression)
+        public async Task<bool> ToUpdate(Expression<Func<TEntity, TEntity>> expression)
         {
-            return await UpdateWithAffectedRowsNumber(expression) > 0;
+            return await ToUpdateWithAffectedRowsNumber(expression) > 0;
         }
 
-        public Task<int> UpdateWithAffectedRowsNumber(Expression<Func<TEntity, TEntity>> expression)
+        public Task<int> ToUpdateWithAffectedRowsNumber(Expression<Func<TEntity, TEntity>> expression)
         {
             _queryBody.SetUpdate(expression);
 
@@ -333,12 +335,12 @@ namespace Mkh.Data.Core.Queryable
             return _repository.Execute(sql, parameters.ToDynamicParameters());
         }
 
-        public async Task<bool> Update(string updateSql, Dictionary<string, object> parameters = null)
+        public async Task<bool> ToUpdate(string updateSql, Dictionary<string, object> parameters = null)
         {
-            return await UpdateWithAffectedRowsNumber(updateSql, parameters) > 0;
+            return await ToUpdateWithAffectedRowsNumber(updateSql, parameters) > 0;
         }
 
-        public Task<int> UpdateWithAffectedRowsNumber(string updateSql, Dictionary<string, object> parameters = null)
+        public Task<int> ToUpdateWithAffectedRowsNumber(string updateSql, Dictionary<string, object> parameters = null)
         {
             _queryBody.SetUpdate(updateSql);
             var sql = _sqlBuilder.BuildUpdateSql(out IQueryParameters p_);
@@ -355,49 +357,49 @@ namespace Mkh.Data.Core.Queryable
             return _repository.Execute(sql, dynamicParameters);
         }
 
-        public string UpdateSql(Expression<Func<TEntity, TEntity>> expression)
+        public string ToUpdateSql(Expression<Func<TEntity, TEntity>> expression)
         {
             _queryBody.SetUpdate(expression);
             return _sqlBuilder.BuildUpdateSql(out _);
         }
 
-        public string UpdateSql(Expression<Func<TEntity, TEntity>> expression, out IQueryParameters parameters)
+        public string ToUpdateSql(Expression<Func<TEntity, TEntity>> expression, out IQueryParameters parameters)
         {
             _queryBody.SetUpdate(expression);
             return _sqlBuilder.BuildUpdateSql(out parameters);
         }
 
-        public string UpdateSql(Expression<Func<TEntity, TEntity>> expression, IQueryParameters parameters)
+        public string ToUpdateSql(Expression<Func<TEntity, TEntity>> expression, IQueryParameters parameters)
         {
             _queryBody.SetUpdate(expression);
             return _sqlBuilder.BuildUpdateSql(parameters);
         }
 
-        public string UpdateSqlNotUseParameters(Expression<Func<TEntity, TEntity>> expression)
+        public string ToUpdateSqlNotUseParameters(Expression<Func<TEntity, TEntity>> expression)
         {
             _queryBody.SetUpdate(expression);
             return _sqlBuilder.BuildUpdateSqlNotUseParameters();
         }
 
-        public string UpdateSql(string updateSql)
+        public string ToUpdateSql(string updateSql)
         {
             _queryBody.SetUpdate(updateSql);
             return _sqlBuilder.BuildUpdateSql(out _);
         }
 
-        public string UpdateSql(string updateSql, out IQueryParameters parameters)
+        public string ToUpdateSql(string updateSql, out IQueryParameters parameters)
         {
             _queryBody.SetUpdate(updateSql);
             return _sqlBuilder.BuildUpdateSql(out parameters);
         }
 
-        public string UpdateSql(string updateSql, IQueryParameters parameters)
+        public string ToUpdateSql(string updateSql, IQueryParameters parameters)
         {
             _queryBody.SetUpdate(updateSql);
             return _sqlBuilder.BuildUpdateSql(parameters);
         }
 
-        public string UpdateSqlNotUseParameters(string updateSql)
+        public string ToUpdateSqlNotUseParameters(string updateSql)
         {
             _queryBody.SetUpdate(updateSql);
             return _sqlBuilder.BuildUpdateSqlNotUseParameters();
@@ -407,34 +409,34 @@ namespace Mkh.Data.Core.Queryable
 
         #region ==删除==
 
-        public async Task<bool> Delete()
+        public async Task<bool> ToDelete()
         {
-            return await DeleteWithAffectedRowsNumber() > 0;
+            return await ToDeleteWithAffectedRowsNumber() > 0;
         }
 
-        public Task<int> DeleteWithAffectedRowsNumber()
+        public Task<int> ToDeleteWithAffectedRowsNumber()
         {
             var sql = _sqlBuilder.BuildDeleteSql(out IQueryParameters parameters);
             _logger.Write("Delete", sql);
             return _repository.Execute(sql, parameters.ToDynamicParameters());
         }
 
-        public string DeleteSql()
+        public string ToDeleteSql()
         {
             return _sqlBuilder.BuildDeleteSql(out _);
         }
 
-        public string DeleteSql(out IQueryParameters parameters)
+        public string ToDeleteSql(out IQueryParameters parameters)
         {
             return _sqlBuilder.BuildDeleteSql(out parameters);
         }
 
-        public string DeleteSql(IQueryParameters parameters)
+        public string ToDeleteSql(IQueryParameters parameters)
         {
             return _sqlBuilder.BuildDeleteSql(parameters);
         }
 
-        public string DeleteSqlNotUseParameters()
+        public string ToDeleteSqlNotUseParameters()
         {
             return _sqlBuilder.BuildDeleteSqlNotUseParameters();
         }
@@ -443,34 +445,34 @@ namespace Mkh.Data.Core.Queryable
 
         #region ==软删除==
 
-        public async Task<bool> SoftDelete()
+        public async Task<bool> ToSoftDelete()
         {
-            return await SoftDeleteWithAffectedRowsNumber() > 0;
+            return await ToSoftDeleteWithAffectedRowsNumber() > 0;
         }
 
-        public Task<int> SoftDeleteWithAffectedRowsNumber()
+        public Task<int> ToSoftDeleteWithAffectedRowsNumber()
         {
             var sql = _sqlBuilder.BuildSoftDeleteSql(out IQueryParameters parameters);
             _logger.Write("Delete", sql);
             return _repository.Execute(sql, parameters.ToDynamicParameters());
         }
 
-        public string SoftDeleteSql()
+        public string ToSoftDeleteSql()
         {
             return _sqlBuilder.BuildSoftDeleteSql(out _);
         }
 
-        public string SoftDeleteSql(out IQueryParameters parameters)
+        public string ToSoftDeleteSql(out IQueryParameters parameters)
         {
             return _sqlBuilder.BuildSoftDeleteSql(out parameters);
         }
 
-        public string SoftDeleteSql(IQueryParameters parameters)
+        public string ToSoftDeleteSql(IQueryParameters parameters)
         {
             return _sqlBuilder.BuildSoftDeleteSql(parameters);
         }
 
-        public string SoftDeleteSqlNotUseParameters()
+        public string ToSoftDeleteSqlNotUseParameters()
         {
             return _sqlBuilder.BuildSoftDeleteSqlNotUseParameters();
         }
@@ -479,56 +481,65 @@ namespace Mkh.Data.Core.Queryable
 
         #region ==列表==
 
-        public Task<IList<TEntity>> List()
+        public Task<IList<TEntity>> ToList()
         {
-            return List<TEntity>();
+            return ToList<TEntity>();
         }
 
         #endregion
 
         #region ==分页==
 
-        public Task<IList<TEntity>> Pagination()
+        public Task<IList<TEntity>> ToPagination()
         {
-            return Pagination<TEntity>();
+            return ToPagination<TEntity>();
         }
 
-        public Task<IList<TEntity>> Pagination(Paging paging)
+        public Task<IList<TEntity>> ToPagination(Paging paging)
         {
-            return Pagination<TEntity>(paging);
+            return ToPagination<TEntity>(paging);
         }
 
         #endregion
 
         #region ==查询第一条==
 
-        public Task<TEntity> First()
+        public Task<TEntity> ToFirst()
         {
-            return First<TEntity>();
+            return ToFirst<TEntity>();
         }
 
         #endregion
 
         #region ==函数查询==
 
-        public Task<TResult> Max<TResult>(Expression<Func<TEntity, TResult>> expression)
+        public Task<TResult> ToMax<TResult>(Expression<Func<TEntity, TResult>> expression)
         {
             return base.Max<TResult>(expression);
         }
 
-        public Task<TResult> Min<TResult>(Expression<Func<TEntity, TResult>> expression)
+        public Task<TResult> ToMin<TResult>(Expression<Func<TEntity, TResult>> expression)
         {
             return base.Min<TResult>(expression);
         }
 
-        public Task<TResult> Sum<TResult>(Expression<Func<TEntity, TResult>> expression)
+        public Task<TResult> ToSum<TResult>(Expression<Func<TEntity, TResult>> expression)
         {
             return base.Sum<TResult>(expression);
         }
 
-        public Task<TResult> Avg<TResult>(Expression<Func<TEntity, TResult>> expression)
+        public Task<TResult> ToAvg<TResult>(Expression<Func<TEntity, TResult>> expression)
         {
             return base.Avg<TResult>(expression);
+        }
+
+        #endregion
+
+        #region ==分组查询==
+
+        public IGroupingQueryable<TResult, TEntity> GroupBy<TResult>(Expression<Func<TEntity, TResult>> expression)
+        {
+            return new GroupingQueryable<TResult, TEntity>(_sqlBuilder, _logger, expression);
         }
 
         #endregion
