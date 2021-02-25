@@ -72,7 +72,58 @@ namespace Mkh.Data.Core.SqlBuilder
 
         #endregion
 
+        #region ==BuildFirstSql==
+
+        /// <summary>
+        /// 生成获取第一条记录语句
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        public string BuildFirstSql(out IQueryParameters parameters)
+        {
+            parameters = new QueryParameters();
+            return BuildFirstSql(parameters);
+        }
+
+        /// <summary>
+        /// 生成获取第一条记录语句
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        public string BuildFirstSql(IQueryParameters parameters)
+        {
+            var select = ResolveSelect();
+            var from = ExpressionResolver.ResolveFrom(_queryBody, parameters);
+            var where = ExpressionResolver.ResolveWhere(_queryBody, parameters);
+            var sort = ResolveSort();
+            var group = ResolveGroupBy();
+            var having = ResolveHaving(parameters);
+
+            return _dbAdapter.GeneratePagingSql(_queryBody.Repository.DbContext.Options.Version, select, from, where, sort, 0, 1, group, having);
+        }
+
+        /// <summary>
+        /// 生成获取第一条记录语句，并且不使用参数化
+        /// </summary>
+        /// <returns></returns>
+        public string BuildFirstSqlNotUserParameters()
+        {
+            _queryBody.UseParameters = false;
+            var sql = BuildFirstSql(out _);
+            _queryBody.UseParameters = true;
+            return sql;
+        }
+
+        #endregion
+
         #region ==解析查询列==
+
+        public string ResolveSelect()
+        {
+            var sqlBuilder = new StringBuilder();
+            ResolveSelect(sqlBuilder);
+            return sqlBuilder.ToString();
+        }
 
         public void ResolveSelect(StringBuilder sqlBuilder)
         {
@@ -99,49 +150,47 @@ namespace Mkh.Data.Core.SqlBuilder
                 {
                     var arg = newExp.Arguments[i];
                     var alias = newExp.Members![i].Name;
-                    //成员
-                    if (arg.NodeType == ExpressionType.MemberAccess)
-                    {
-                        //获取查询列对应的实体
-                        var columnName = GetColumnName(arg as MemberExpression);
-                        sqlBuilder.AppendFormat("{0} AS {1},", columnName, _dbAdapter.AppendQuote(alias));
+                    string columnName;
 
-                        continue;
-                    }
-                    //方法函数
-                    if (arg.NodeType == ExpressionType.Call && arg is MethodCallExpression callExp)
+                    switch (arg.NodeType)
                     {
-                        var methodName = callExp.Method.Name;
-                        string columnName;
-                        switch (callExp.Object.NodeType)
-                        {
-                            case ExpressionType.Parameter:
-                                if (callExp.Arguments.Count > 0)
+                        case ExpressionType.MemberAccess:
+                            var memExp = arg as MemberExpression;
+                            columnName = GetColumnName(memExp);
+                            sqlBuilder.AppendFormat("{0} AS {1},", columnName, _dbAdapter.AppendQuote(alias));
+                            break;
+                        case ExpressionType.Call:
+                            if (arg is MethodCallExpression callExp)
+                            {
+                                var methodName = callExp.Method.Name;
+                                switch (callExp.Object!.NodeType)
                                 {
-                                    //m => m.Sum(x => x.Id)
-                                    var s = (callExp.Arguments[0] as UnaryExpression)!.Operand as LambdaExpression;
-                                    var memberExp = s.Body as MemberExpression;
-                                    columnName = _queryBody.GetColumnName(memberExp, s);
-                                    sqlBuilder.AppendFormat("{0} AS {1},",
-                                        _dbAdapter.FunctionMapper(callExp.Method.Name, columnName,
-                                            callExp.Object!.Type),
-                                        _dbAdapter.AppendQuote(alias));
+                                    case ExpressionType.Parameter:
+                                        if (callExp.Arguments.Count > 0)
+                                        {
+                                            //m => m.Sum(x => x.Id)
+                                            var s = (callExp.Arguments[0] as UnaryExpression)!.Operand as LambdaExpression;
+                                            var memberExp = s.Body as MemberExpression;
+                                            columnName = _queryBody.GetColumnName(memberExp);
+                                            sqlBuilder.AppendFormat("{0} AS {1},", _dbAdapter.FunctionMapper(callExp.Method.Name, columnName, callExp.Object!.Type), _dbAdapter.AppendQuote(alias));
+                                        }
+                                        else
+                                        {
+                                            sqlBuilder.AppendFormat("{0} AS {1},", _dbAdapter.FunctionMapper(methodName, null), _dbAdapter.AppendQuote(alias));
+                                        }
+                                        break;
+                                    case ExpressionType.MemberAccess:
+                                        //m => m.Key.Title.Substring(3)
+                                        columnName = GetColumnName(callExp!.Object as MemberExpression);
+                                        var args = ExpressionResolver.Arguments2Object(callExp.Arguments);
+                                        sqlBuilder.AppendFormat("{0} AS {1},", _dbAdapter.FunctionMapper(methodName, columnName, callExp.Object.Type, args), _dbAdapter.AppendQuote(alias));
+                                        break;
+                                    default:
+                                        sqlBuilder.AppendFormat("{0} AS {1},", _dbAdapter.FunctionMapper(methodName, null), _dbAdapter.AppendQuote(alias));
+                                        break;
                                 }
-                                else
-                                {
-                                    sqlBuilder.AppendFormat("{0} AS {1},", _dbAdapter.FunctionMapper(methodName, null), _dbAdapter.AppendQuote(alias));
-                                }
-                                break;
-                            case ExpressionType.MemberAccess:
-                                //m => m.Key.Title.Substring(3)
-                                columnName = GetColumnName(callExp!.Object as MemberExpression);
-                                var args = ExpressionResolver.Arguments2Object(callExp.Arguments);
-                                sqlBuilder.AppendFormat("{0} AS {1},", _dbAdapter.FunctionMapper(methodName, columnName, callExp.Object.Type, args), _dbAdapter.AppendQuote(alias));
-                                break;
-                            default:
-                                sqlBuilder.AppendFormat("{0} AS {1},", _dbAdapter.FunctionMapper(methodName, null), _dbAdapter.AppendQuote(alias));
-                                break;
-                        }
+                            }
+                            break;
                     }
                 }
             }
@@ -153,24 +202,16 @@ namespace Mkh.Data.Core.SqlBuilder
             }
         }
 
-        /// <summary>
-        /// 解析成员函数
-        /// </summary>
-        /// <param name="expression"></param>
-        /// <param name="sqlBuilder"></param>
-        /// <param name="alias"></param>
-        public void ResolveSelectMemberCall(Expression expression, StringBuilder sqlBuilder, string alias)
-        {
-            var callExp = expression as MethodCallExpression;
-            var mem = callExp!.Object as MemberExpression;
-            var columnName = _queryBody.GetColumnName(mem, _queryBody.GroupBy);
-            var args = ExpressionResolver.Arguments2Object(callExp.Arguments);
-            sqlBuilder.AppendFormat("{0} AS {1},", _dbAdapter.FunctionMapper(callExp.Method.Name, columnName, callExp.Object!.Type, args), _dbAdapter.AppendQuote(alias));
-        }
-
         #endregion
 
         #region ==解析分组条件==
+
+        private string ResolveGroupBy()
+        {
+            var sqlBuilder = new StringBuilder();
+            ResolveGroupBy(sqlBuilder);
+            return sqlBuilder.ToString();
+        }
 
         private void ResolveGroupBy(StringBuilder sqlBuilder)
         {
@@ -186,32 +227,31 @@ namespace Mkh.Data.Core.SqlBuilder
             for (var i = 0; i < newExp!.Arguments.Count; i++)
             {
                 var arg = newExp.Arguments[i];
-                //成员
-                if (arg.NodeType == ExpressionType.MemberAccess)
+                switch (arg.NodeType)
                 {
-                    var memberExp = arg as MemberExpression;
-                    if (memberExp!.Expression!.NodeType == ExpressionType.MemberAccess)
-                    {
-                        if (memberExp.Expression.Type.IsString())
+                    case ExpressionType.MemberAccess:
+                        var memExp = arg as MemberExpression;
+                        if (memExp!.Expression.Type.IsString())
                         {
-                            var columnName = _queryBody.GetColumnName(memberExp.Expression as MemberExpression, _queryBody.GroupBy);
-                            sqlBuilder.AppendFormat(" {0},", _dbAdapter.FunctionMapper(memberExp.Member.Name, columnName));
+                            //字符串的Length属性
+                            var columnName = _queryBody.GetColumnName(memExp.Expression);
+                            sqlBuilder.AppendFormat(" {0},", _queryBody.DbAdapter.FunctionMapper(memExp.Member.Name, columnName));
                         }
-                    }
-                    else
-                    {
-                        var columnName = _queryBody.GetColumnName(memberExp, _queryBody.GroupBy);
-                        sqlBuilder.AppendFormat(" {0},", columnName);
-                    }
-                    continue;
-                }
-                //方法
-                if (arg.NodeType == ExpressionType.Call && arg is MethodCallExpression callExp)
-                {
-                    var memberExp = callExp!.Object as MemberExpression;
-                    var columnName = _queryBody.GetColumnName(memberExp, _queryBody.GroupBy);
-                    var args = ExpressionResolver.Arguments2Object(callExp.Arguments);
-                    sqlBuilder.AppendFormat(" {0},", _dbAdapter.FunctionMapper(callExp.Method.Name, columnName, callExp.Object!.Type, args));
+                        else if (DbConstants.ENTITY_INTERFACE_TYPE.IsImplementType(memExp.Expression.Type))
+                        {
+                            //解析列信息，如：m.T1.Id
+                            var columnName = _queryBody.GetColumnName(memExp);
+                            sqlBuilder.AppendFormat(" {0},", columnName);
+                        }
+                        break;
+                    case ExpressionType.Call:
+                        if (arg is MethodCallExpression callExp)
+                        {
+                            var columnName = _queryBody.GetColumnName(callExp!.Object);
+                            var args = ExpressionResolver.Arguments2Object(callExp.Arguments);
+                            sqlBuilder.AppendFormat(" {0},", _dbAdapter.FunctionMapper(callExp.Method.Name, columnName, callExp.Object!.Type, args));
+                        }
+                        break;
                 }
             }
 
@@ -225,6 +265,13 @@ namespace Mkh.Data.Core.SqlBuilder
         #endregion
 
         #region ==解析聚合条件==
+
+        private string ResolveHaving(IQueryParameters parameters)
+        {
+            var sqlBuilder = new StringBuilder();
+            ResolveHaving(sqlBuilder, parameters);
+            return sqlBuilder.ToString();
+        }
 
         private void ResolveHaving(StringBuilder sqlBuilder, IQueryParameters parameters)
         {
@@ -248,6 +295,13 @@ namespace Mkh.Data.Core.SqlBuilder
         #endregion
 
         #region ==解析排序==
+
+        public string ResolveSort()
+        {
+            var sqlBuilder = new StringBuilder();
+            ResolveSort(sqlBuilder);
+            return sqlBuilder.ToString();
+        }
 
         public void ResolveSort(StringBuilder sqlBuilder)
         {
@@ -298,8 +352,7 @@ namespace Mkh.Data.Core.SqlBuilder
                         case ExpressionType.Parameter:
                             //OrderBy(m => m.Sum(x => x.Id))
                             var fullLambda = (callExp.Arguments[0] as UnaryExpression).Operand as LambdaExpression;
-                            var memberExp = fullLambda.Body as MemberExpression;
-                            var columnName = _queryBody.GetColumnName(memberExp, fullLambda);
+                            var columnName = _queryBody.GetColumnName(fullLambda.Body);
                             sqlBuilder.AppendFormat(" {0} {1},", _queryBody.DbAdapter.FunctionMapper(methodName, columnName), sort);
                             break;
                         case ExpressionType.MemberAccess:
@@ -346,7 +399,7 @@ namespace Mkh.Data.Core.SqlBuilder
              */
 
             //获取查询列对应的实体
-            var groupByExp = (_queryBody.GroupBy.Body as NewExpression);
+            var groupByExp = _queryBody.GroupBy.Body as NewExpression;
             for (var t = 0; t < groupByExp.Members.Count; t++)
             {
                 if (groupByExp.Members[t].Name.Equals(memberExp.Member.Name))
@@ -356,13 +409,16 @@ namespace Mkh.Data.Core.SqlBuilder
                     switch (groupByArg.NodeType)
                     {
                         case ExpressionType.MemberAccess:
-                            var groupByMember = groupByArg as MemberExpression;
-                            columnName = _queryBody.GetColumnName(groupByMember, _queryBody.GroupBy);
+                            var memExp = groupByArg as MemberExpression;
+                            columnName = _queryBody.GetColumnName(memExp);
+                            if (memExp!.Expression!.Type.IsString())
+                            {
+                                return _queryBody.DbAdapter.FunctionMapper(memExp.Member.Name, columnName);
+                            }
                             return columnName;
                         case ExpressionType.Call:
                             var callExp = groupByArg as MethodCallExpression;
-                            memberExp = callExp!.Object as MemberExpression;
-                            columnName = _queryBody.GetColumnName(memberExp, _queryBody.GroupBy);
+                            columnName = _queryBody.GetColumnName(callExp!.Object);
                             var args = ExpressionResolver.Arguments2Object(callExp.Arguments);
                             return _dbAdapter.FunctionMapper(callExp.Method.Name, columnName, callExp.Object!.Type, args);
                         default:

@@ -31,15 +31,16 @@ namespace Microsoft.Extensions.DependencyInjection
             services.TryAddSingleton<IDbLoggerProvider, DbLoggerProvider>();
 
             var sp = services.BuildServiceProvider();
+            var dbLogger = new DbLogger(options, sp.GetService<IDbLoggerProvider>());
+            var accountResolver = sp.GetService<IAccountResolver>();
 
             //创建数据库上下文实例，通过反射设置属性
             var dbContextType = typeof(TDbContext);
             var dbContext = (TDbContext)Activator.CreateInstance(dbContextType);
-            dbContextType.GetProperty("Services")?.SetValue(dbContext, sp);
             dbContextType.GetProperty("Options")?.SetValue(dbContext, options);
-            dbContextType.GetProperty("Logger")?.SetValue(dbContext, new DbLogger(options, sp.GetService<IDbLoggerProvider>()));
+            dbContextType.GetProperty("Logger")?.SetValue(dbContext, dbLogger);
             dbContextType.GetProperty("Adapter")?.SetValue(dbContext, dbAdapter);
-            dbContextType.GetProperty("AccountResolver")?.SetValue(dbContext, sp.GetService<IAccountResolver>());
+            dbContextType.GetProperty("AccountResolver")?.SetValue(dbContext, accountResolver);
 
             // ReSharper disable once AssignNullToNotNullAttribute
             services.AddSingleton(dbContextType, dbContext);

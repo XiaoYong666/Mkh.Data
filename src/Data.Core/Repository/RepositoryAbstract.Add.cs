@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Mkh.Data.Abstractions;
 using Mkh.Data.Abstractions.Entities;
 
 namespace Mkh.Data.Core.Repository
@@ -10,9 +11,9 @@ namespace Mkh.Data.Core.Repository
     /// <typeparam name="TEntity"></typeparam>
     public abstract partial class RepositoryAbstract<TEntity>
     {
-        public Task<bool> Add(TEntity entity)
+        public Task<bool> Add(TEntity entity, IUnitOfWork uow = null)
         {
-            return Add(entity, null);
+            return Add(entity, null, uow);
         }
 
         /// <summary>
@@ -20,8 +21,9 @@ namespace Mkh.Data.Core.Repository
         /// </summary>
         /// <param name="entity"></param>
         /// <param name="tableName"></param>
+        /// <param name="uow">工作单元</param>
         /// <returns></returns>
-        protected async Task<bool> Add(TEntity entity, string tableName)
+        protected async Task<bool> Add(TEntity entity, string tableName, IUnitOfWork uow = null)
         {
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity), "entity is null");
@@ -37,7 +39,7 @@ namespace Mkh.Data.Core.Repository
             {
                 //自增主键
                 sql += _adapter.IdentitySql;
-                var id = await ExecuteScalar<int>(sql, entity);
+                var id = await ExecuteScalar<int>(sql, entity, uow);
                 if (id > 0)
                 {
                     primaryKey.PropertyInfo.SetValue(entity, id);
@@ -53,7 +55,7 @@ namespace Mkh.Data.Core.Repository
             {
                 //自增主键
                 sql += _adapter.IdentitySql;
-                var id = await ExecuteScalar<long>(sql, entity);
+                var id = await ExecuteScalar<long>(sql, entity, uow);
                 if (id > 0)
                 {
                     primaryKey.PropertyInfo.SetValue(entity, id);
@@ -72,7 +74,7 @@ namespace Mkh.Data.Core.Repository
 
                 _logger.Write("NewID", id.ToString());
 
-                if (await Execute(sql, entity) > 0)
+                if (await Execute(sql, entity, uow) > 0)
                 {
                     return true;
                 }

@@ -25,6 +25,6 @@ namespace Data.Common.Test.Domain.Article
 
         public string Deleter { get; set; }
 
-        public DateTime DeletedTime { get; set; }
+        public DateTime? DeletedTime { get; set; }
     }
 }

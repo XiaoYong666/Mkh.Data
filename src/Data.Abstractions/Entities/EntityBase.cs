@@ -22,7 +22,7 @@ namespace Mkh.Data.Abstractions.Entities
         /// <summary>
         /// 创建时间
         /// </summary>
-        public virtual DateTime CreatedTime { get; set; }
+        public virtual DateTime CreatedTime { get; set; } = DateTime.Now;
 
         /// <summary>
         /// 修改人编号

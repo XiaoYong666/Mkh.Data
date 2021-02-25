@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Mkh.Data.Abstractions;
 using Mkh.Data.Abstractions.Logger;
-using Mkh.Data.Abstractions.Pagination;
 using Mkh.Data.Abstractions.Queryable;
 using Mkh.Data.Abstractions.Queryable.Grouping;
 using Mkh.Data.Core.Internal.QueryStructure;
@@ -41,8 +39,8 @@ namespace Mkh.Data.Core.Queryable.Grouping
         public async Task<IList<TResult>> ToList<TResult>()
         {
             var sql = _sqlBuilder.BuildListSql(out IQueryParameters parameters);
-            _logger.Write("GroupByList", sql);
-            return (await _repository.Query<TResult>(sql, parameters.ToDynamicParameters())).ToList();
+            _logger.Write("GroupByToList", sql);
+            return (await _repository.Query<TResult>(sql, parameters.ToDynamicParameters(), _queryBody.Uow)).ToList();
         }
 
         public string ToListSql()
@@ -71,87 +69,45 @@ namespace Mkh.Data.Core.Queryable.Grouping
 
         public Task<IDataReader> ToReader()
         {
-            throw new NotImplementedException();
-        }
-
-        #endregion
-
-        #region ==Pagination==
-
-
-        public Task<IList<dynamic>> ToPaginationDynamic()
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<IList<dynamic>> ToPaginationDynamic(Paging paging)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<IList<TResult>> ToPagination<TResult>()
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<IList<TResult>> ToPagination<TResult>(Paging paging)
-        {
-            throw new NotImplementedException();
-        }
-
-        public string ToPaginationSql(Paging paging)
-        {
-            throw new NotImplementedException();
-        }
-
-        public string ToPaginationSql(Paging paging, out IQueryParameters parameters)
-        {
-            throw new NotImplementedException();
-        }
-
-        public string ToPaginationSql(Paging paging, IQueryParameters parameters)
-        {
-            throw new NotImplementedException();
-        }
-
-        public string ToPaginationSqlNotUseParameters(Paging paging)
-        {
-            throw new NotImplementedException();
+            var sql = _sqlBuilder.BuildListSql(out IQueryParameters parameters);
+            _logger.Write("GroupByToReader", sql);
+            return _repository.ExecuteReader(sql, parameters.ToDynamicParameters(), _queryBody.Uow);
         }
 
         #endregion
 
         #region ==First==
 
-
         public Task<dynamic> ToFirstDynamic()
         {
-            throw new NotImplementedException();
+            return ToFirst<dynamic>();
         }
 
         public Task<TResult> ToFirst<TResult>()
         {
-            throw new NotImplementedException();
+            var sql = _sqlBuilder.BuildFirstSql(out IQueryParameters parameters);
+            _logger.Write("ToFirst", sql);
+            return _repository.QueryFirstOrDefault<TResult>(sql, parameters.ToDynamicParameters(), _queryBody.Uow);
         }
 
         public string ToFirstSql()
         {
-            throw new NotImplementedException();
+            return _sqlBuilder.BuildFirstSql(out _);
         }
 
         public string ToFirstSql(out IQueryParameters parameters)
         {
-            throw new NotImplementedException();
+            return _sqlBuilder.BuildFirstSql(out parameters);
         }
 
         public string ToFirstSql(IQueryParameters parameters)
         {
-            throw new NotImplementedException();
+            return _sqlBuilder.BuildFirstSql(parameters);
         }
 
         public string ToFirstSqlNotUseParameters()
         {
-            throw new NotImplementedException();
+            return _sqlBuilder.BuildFirstSqlNotUserParameters();
         }
 
         #endregion

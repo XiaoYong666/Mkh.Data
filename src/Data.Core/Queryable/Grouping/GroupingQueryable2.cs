@@ -8,7 +8,9 @@ using Mkh.Data.Core.SqlBuilder;
 
 namespace Mkh.Data.Core.Queryable.Grouping
 {
-    internal class GroupingQueryable<TKey, TEntity, TEntity2> : GroupingQueryable, IGroupingQueryable<TKey, TEntity, TEntity2> where TEntity : IEntity where TEntity2 : IEntity
+    internal class GroupingQueryable<TKey, TEntity, TEntity2> : GroupingQueryable, IGroupingQueryable<TKey, TEntity, TEntity2>
+        where TEntity : IEntity, new()
+        where TEntity2 : IEntity, new()
     {
         public GroupingQueryable(QueryableSqlBuilder sqlBuilder, DbLogger logger, Expression expression) : base(sqlBuilder, logger, expression)
         {

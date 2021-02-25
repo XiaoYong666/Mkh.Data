@@ -1,13 +1,14 @@
 ﻿using System.Threading.Tasks;
+using Mkh.Data.Abstractions;
 using Mkh.Data.Abstractions.Adapter;
 
 namespace Mkh.Data.Core.Repository
 {
     public abstract partial class RepositoryAbstract<TEntity>
     {
-        public Task<TEntity> Get(dynamic id)
+        public Task<TEntity> Get(dynamic id, IUnitOfWork uow = null)
         {
-            return Get(id, null);
+            return Get(id, null, uow);
         }
 
         /// <summary>
@@ -15,10 +16,11 @@ namespace Mkh.Data.Core.Repository
         /// </summary>
         /// <param name="id">实体ID</param>
         /// <param name="tableName">自定义表名称</param>
+        /// <param name="uow">工作单元</param>
         /// <param name="rowLock">行锁</param>
         /// <param name="noLock">无锁(SqlServer有效)</param>
         /// <returns></returns>
-        protected Task<TEntity> Get(dynamic id, string tableName, bool rowLock = false, bool noLock = false)
+        protected Task<TEntity> Get(dynamic id, string tableName, IUnitOfWork uow = null, bool rowLock = false, bool noLock = false)
         {
             var dynParams = GetIdParameter(id);
             string sql;
@@ -30,7 +32,7 @@ namespace Mkh.Data.Core.Repository
                 sql = _sql.GetGet(tableName);
 
             _logger.Write("Get", sql);
-            return QuerySingleOrDefault<TEntity>(sql, dynParams);
+            return QuerySingleOrDefault<TEntity>(sql, dynParams, uow);
         }
     }
 }

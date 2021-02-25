@@ -7,6 +7,7 @@ using Data.Common.Test.Domain.Article;
 using Data.Common.Test.Domain.Category;
 using Microsoft.Extensions.DependencyInjection;
 using Mkh.Data.Abstractions.Extensions;
+using Mkh.Data.Abstractions.Queryable;
 using Mkh.Data.Core.Internal;
 using Mkh.Data.Core.Internal.QueryStructure;
 using Xunit;
@@ -24,7 +25,6 @@ namespace Data.Adapter.MySql.Test
             _queryBody.Joins.Add(new QueryJoin(_dbContext.EntityDescriptors.FirstOrDefault(m => m.TableName == "Article"), "T1"));
         }
 
-
         /// <summary>
         /// 解析表达式
         /// </summary>
@@ -38,16 +38,6 @@ namespace Data.Adapter.MySql.Test
 
             Assert.Equal("`Id` > @P1", sql);
             Assert.Equal(1, parameters.Count);
-
-            //多表
-            _queryBody.Joins.Add(new QueryJoin(_dbContext.EntityDescriptors.FirstOrDefault(m => m.TableName == "MyCategory"), "T2"));
-            parameters.Clear();
-            Expression<Func<ArticleEntity, CategoryEntity, bool>> exp1 = (m, n) => m.Id > 10 && n.Name == "mkh";
-            sql = ExpressionResolver.Resolve(_queryBody, exp1, parameters);
-
-            Assert.Equal("T1.`Id` > @P1 AND T2.`Name` = @P2", sql);
-            Assert.Equal(2, parameters.Count);
-            Assert.Equal("mkh", parameters[1].Value);
         }
 
         /// <summary>
@@ -351,6 +341,22 @@ namespace Data.Adapter.MySql.Test
             Assert.Equal("`Id` NOT IN (10,15)", sql);
         }
 
+        /// <summary>
+        /// 解析集合类型的Contains函数
+        /// </summary>
+        [Fact]
+        public void ResolveExpressionTest21()
+        {
+            var ids = new List<int> { 10, 15 };
+
+            Expression<Func<ArticleEntity, bool>> exp = m => ids.AsEnumerable().Contains(m.Id);
+
+            var parameters = new QueryParameters();
+            var sql = ExpressionResolver.Resolve(_queryBody, exp, parameters);
+
+            Assert.Equal("`Id` IN (10,15)", sql);
+        }
+
         #region ==解析表==
 
         //解析表
@@ -363,54 +369,6 @@ namespace Data.Adapter.MySql.Test
             var sql = sqlBuilder.ToString();
 
             Assert.Equal("`Article`", sql);
-        }
-
-        //解析表，多表左连接
-        [Fact]
-        public void ResolveFormTest1()
-        {
-            Expression<Func<ArticleEntity, CategoryEntity, bool>> exp = (m, n) => m.CategoryId == n.Id;
-            _queryBody.Joins.Add(new QueryJoin(_dbContext.EntityDescriptors.FirstOrDefault(m => m.TableName == "MyCategory"), "T2", JoinType.Left, exp));
-
-            var parameters = new QueryParameters();
-            var sqlBuilder = new StringBuilder();
-
-            ExpressionResolver.ResolveFrom(_queryBody, sqlBuilder, parameters);
-            var sql = sqlBuilder.ToString();
-
-            Assert.Equal("`Article` AS T1 LEFT JOIN `MyCategory` AS T2 ON T1.`CategoryId` = T2.`Id`", sql);
-        }
-
-        //解析表，多表右连接
-        [Fact]
-        public void ResolveFormTest2()
-        {
-            Expression<Func<ArticleEntity, CategoryEntity, bool>> exp = (m, n) => m.CategoryId == n.Id;
-            _queryBody.Joins.Add(new QueryJoin(_dbContext.EntityDescriptors.FirstOrDefault(m => m.TableName == "MyCategory"), "T2", JoinType.Right, exp));
-
-            var parameters = new QueryParameters();
-            var sqlBuilder = new StringBuilder();
-
-            ExpressionResolver.ResolveFrom(_queryBody, sqlBuilder, parameters);
-            var sql = sqlBuilder.ToString();
-
-            Assert.Equal("`Article` AS T1 RIGHT JOIN `MyCategory` AS T2 ON T1.`CategoryId` = T2.`Id`", sql);
-        }
-
-        //解析表，多表内连接
-        [Fact]
-        public void ResolveFormTest3()
-        {
-            Expression<Func<ArticleEntity, CategoryEntity, bool>> exp = (m, n) => m.CategoryId == n.Id;
-            _queryBody.Joins.Add(new QueryJoin(_dbContext.EntityDescriptors.FirstOrDefault(m => m.TableName == "MyCategory"), "T2", JoinType.Inner, exp));
-
-            var parameters = new QueryParameters();
-            var sqlBuilder = new StringBuilder();
-
-            ExpressionResolver.ResolveFrom(_queryBody, sqlBuilder, parameters);
-            var sql = sqlBuilder.ToString();
-
-            Assert.Equal("`Article` AS T1 INNER JOIN `MyCategory` AS T2 ON T1.`CategoryId` = T2.`Id`", sql);
         }
 
         #endregion

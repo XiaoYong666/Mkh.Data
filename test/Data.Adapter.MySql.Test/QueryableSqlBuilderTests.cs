@@ -3,7 +3,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using Data.Common.Test.Domain.Article;
-using Data.Common.Test.Domain.Category;
 using Microsoft.Extensions.DependencyInjection;
 using Mkh.Data.Abstractions.Pagination;
 using Mkh.Data.Core.Internal.QueryStructure;
@@ -239,43 +238,8 @@ namespace Data.Adapter.MySql.Test
             sql = builder.ResolveSelect();
 
             Assert.Equal("LOWER(`Title`) AS `Title`,UPPER(`Content`) AS `Content`", sql);
-
-            //多表
-            builder.QueryBody.Joins.Add(new QueryJoin(_dbContext.EntityDescriptors.FirstOrDefault(m => m.TableName == "MyCategory"), "T2"));
-
-            Expression<Func<ArticleEntity, CategoryEntity, dynamic>> exp4 = (m, n) => new { m.Title, n.Name };
-
-            builder.QueryBody.SetSelect(exp4);
-            sql = builder.ResolveSelect();
-
-            Assert.Equal("T1.`Title` AS `Title`,T2.`Name` AS `Name`", sql);
-
-            Expression<Func<ArticleEntity, CategoryEntity, dynamic>> exp5 = (m, n) => new { m.Title, n };
-
-            builder.QueryBody.SetSelect(exp5);
-            sql = builder.ResolveSelect();
-
-            Assert.Equal("T1.`Title` AS `Title`,T2.`Id` AS `Id`,T2.`Name` AS `Name`,T2.`CreatedBy` AS `CreatedBy`,T2.`Creator` AS `Creator`,T2.`CreatedTime` AS `CreatedTime`,T2.`ModifiedBy` AS `ModifiedBy`,T2.`Modifier` AS `Modifier`,T2.`ModifiedTime` AS `ModifiedTime`", sql);
-
-            Expression<Func<ArticleEntity, CategoryEntity, dynamic>> exp6 = (m, n) => new { m.Title, Name = n.Name.Substring(3, 2) };
-
-            builder.QueryBody.SetSelect(exp6);
-            sql = builder.ResolveSelect();
-            Assert.Equal("T1.`Title` AS `Title`,SUBSTR(T2.`Name`,4,2) AS `Name`", sql);
-
-
-            //排除列
-            Expression<Func<ArticleEntity, CategoryEntity, dynamic>> exp7 = (m, n) => new { m.Id, m.Title, n };
-            Expression<Func<ArticleEntity, CategoryEntity, dynamic>> exp8 = (m, n) => new { m.Title, n.Name };
-
-            builder.QueryBody.SetSelect(exp7);
-            builder.QueryBody.SetSelectExclude(exp8);
-            sql = builder.ResolveSelect();
-
-            Assert.Equal("T1.`Id` AS `Id`,T2.`Id` AS `Id`,T2.`CreatedBy` AS `CreatedBy`,T2.`Creator` AS `Creator`,T2.`CreatedTime` AS `CreatedTime`,T2.`ModifiedBy` AS `ModifiedBy`,T2.`Modifier` AS `Modifier`,T2.`ModifiedTime` AS `ModifiedTime`", sql);
         }
 
         #endregion
-
     }
 }

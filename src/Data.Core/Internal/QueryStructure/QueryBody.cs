@@ -101,6 +101,11 @@ namespace Mkh.Data.Core.Internal.QueryStructure
         /// </summary>
         public List<QueryHaving> Havings { get; set; }
 
+        /// <summary>
+        /// 工作单元
+        /// </summary>
+        public IUnitOfWork Uow { get; set; }
+
         #endregion
 
         #region ==构造函数
@@ -284,31 +289,39 @@ namespace Mkh.Data.Core.Internal.QueryStructure
         #region ==获取列名==
 
         /// <summary>
-        /// 获取列名
+        /// 从成员表达式中获取列名
         /// </summary>
-        public string GetColumnName(string fieldName, QueryJoin join)
+        /// <param name="expression"></param>
+        /// <returns></returns>
+        public string GetColumnName(Expression expression)
         {
-            var col = GetColumnDescriptor(fieldName, join);
-
+            var join = GetJoin(expression as MemberExpression);
+            var columnName = join.Item2.Name;
             //只有一个实体的时候，不需要别名
             if (Joins.Count == 1)
             {
-                return _dbAdapter.AppendQuote(col.Name);
+                return _dbAdapter.AppendQuote(columnName);
             }
 
-            return $"{join.Alias}.{_dbAdapter.AppendQuote(col.Name)}";
+            return $"{join.Item1.Alias}.{_dbAdapter.AppendQuote(columnName)}";
         }
 
         /// <summary>
-        /// 从成员表达式中获取列名
+        /// 获取完整列名
         /// </summary>
-        /// <param name="exp"></param>
-        /// <param name="lambda"></param>
+        /// <param name="join"></param>
+        /// <param name="descriptor"></param>
         /// <returns></returns>
-        public string GetColumnName(MemberExpression exp, LambdaExpression lambda)
+        public string GetColumnName(QueryJoin join, IColumnDescriptor descriptor)
         {
-            var join = GetJoin(exp, lambda);
-            return GetColumnName(exp.Member.Name, join);
+            var columnName = descriptor.Name;
+            //只有一个实体的时候，不需要别名
+            if (Joins.Count == 1)
+            {
+                return _dbAdapter.AppendQuote(columnName);
+            }
+
+            return $"{join.Alias}.{_dbAdapter.AppendQuote(columnName)}";
         }
 
         #endregion
@@ -330,43 +343,27 @@ namespace Mkh.Data.Core.Internal.QueryStructure
             return col;
         }
 
-        /// <summary>
-        /// 获取列描述
-        /// </summary>
-        /// <param name="exp"></param>
-        /// <param name="lambda"></param>
-        /// <returns></returns>
-        public IColumnDescriptor GetColumnDescriptor(MemberExpression exp, LambdaExpression lambda)
-        {
-            var join = GetJoin(exp, lambda);
-            return GetColumnDescriptor(exp.Member.Name, join);
-        }
-
-
         #endregion
 
         #region ==获取表连接信息==
 
-        /// <summary>
-        /// 根据指定条件获取表连接信息
-        /// </summary>
-        /// <param name="exp"></param>
-        /// <param name="lambda"></param>
-        /// <returns></returns>
-        public QueryJoin GetJoin(MemberExpression exp, LambdaExpression lambda)
+        public Tuple<QueryJoin, IColumnDescriptor> GetJoin(MemberExpression exp)
         {
-            var index = 0;
-            var memberParameter = exp.Expression as ParameterExpression;
-            if (memberParameter == null)
-                return null;
+            var fieldExp = exp.Expression;
 
-            foreach (var parameter in lambda.Parameters)
+            if (typeof(IEntity).IsImplementType(fieldExp!.Type))
             {
-                if (parameter.Name!.Equals(memberParameter.Name))
-                    break;
-                index++;
+                var join = Joins.First(m => m.EntityDescriptor.EntityType == fieldExp.Type);
+                var column = GetColumnDescriptor(exp.Member.Name, join);
+                return new Tuple<QueryJoin, IColumnDescriptor>(join, column);
             }
-            return Joins[index];
+
+            if (fieldExp.NodeType == ExpressionType.MemberAccess)
+            {
+                return GetJoin(fieldExp as MemberExpression);
+            }
+
+            return null;
         }
 
         #endregion
@@ -411,6 +408,19 @@ namespace Mkh.Data.Core.Internal.QueryStructure
             Havings ??= new List<QueryHaving>();
 
             Havings.Add(new QueryHaving(havingSql));
+        }
+
+        #endregion
+
+        #region ==设置工作单元==
+
+        /// <summary>
+        /// 设置工作单元
+        /// </summary>
+        /// <param name="uow"></param>
+        public void SetUow(IUnitOfWork uow)
+        {
+            Uow = uow;
         }
 
         #endregion

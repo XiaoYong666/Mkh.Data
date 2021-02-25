@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Mkh.Data.Abstractions;
 
 namespace Mkh.Data.Core.Repository
 {
@@ -9,12 +10,12 @@ namespace Mkh.Data.Core.Repository
     /// <typeparam name="TEntity"></typeparam>
     public abstract partial class RepositoryAbstract<TEntity>
     {
-        public Task<bool> Update(TEntity entity)
+        public Task<bool> Update(TEntity entity, IUnitOfWork uow = null)
         {
-            return UpdateAsync(entity, null);
+            return UpdateAsync(entity, null, uow);
         }
 
-        protected async Task<bool> UpdateAsync(TEntity entity, string tableName)
+        protected async Task<bool> UpdateAsync(TEntity entity, string tableName, IUnitOfWork uow = null)
         {
             Check.NotNull(entity, nameof(entity));
 
@@ -22,7 +23,7 @@ namespace Mkh.Data.Core.Repository
 
             var sql = _sql.GetUpdateSingle(tableName);
 
-            var result = await Execute(sql, entity) > 0;
+            var result = await Execute(sql, entity, uow) > 0;
             return result;
         }
 

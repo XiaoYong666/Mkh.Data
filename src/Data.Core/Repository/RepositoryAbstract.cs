@@ -27,9 +27,11 @@ namespace Mkh.Data.Core.Repository
 
         public IDbContext DbContext { get; private set; }
 
+        public IUnitOfWork Uow { get; private set; }
+
         public IEntityDescriptor EntityDescriptor { get; private set; }
 
-        internal IDbTransaction Transaction { get; set; }
+        internal IDbTransaction Transaction => Uow?.Transaction;
 
         public IDbConnection Conn
         {
@@ -66,19 +68,12 @@ namespace Mkh.Data.Core.Repository
             _logger = context.Logger;
         }
 
-        /// <summary>
-        /// 初始化带事务
-        /// </summary>
-        /// <param name="context"></param>
-        /// <param name="transaction"></param>
-        internal void InitWidthTransaction(IDbContext context, IDbTransaction transaction)
-        {
-            Transaction = transaction;
-
-            Init(context);
-        }
-
         #endregion
+
+        public void BindingUow(IUnitOfWork uow)
+        {
+            Uow = uow;
+        }
 
         #region ==数据操作方法，对Dapper进行的二次封装，这些方法只能在仓储内访问==
 
@@ -90,10 +85,12 @@ namespace Mkh.Data.Core.Repository
         /// <param name="sql">sql语句</param>
         /// <param name="param">参数</param>
         /// <param name="commandType">命令类型</param>
+        /// <param name="uow">工作单元</param>
         /// <returns></returns>
-        public Task<int> Execute(string sql, object param = null, CommandType? commandType = null)
+        public Task<int> Execute(string sql, object param = null, IUnitOfWork uow = null, CommandType? commandType = null)
         {
-            return Conn.ExecuteAsync(sql, param, Transaction, commandType: commandType);
+            var conn = OpenConn(uow, out IDbTransaction tran);
+            return conn.ExecuteAsync(sql, param, tran, commandType: commandType);
         }
 
         #endregion
@@ -107,10 +104,12 @@ namespace Mkh.Data.Core.Repository
         /// <param name="sql">sql语句</param>
         /// <param name="param">参数</param>
         /// <param name="commandType">命令类型</param>
+        /// <param name="uow"></param>
         /// <returns></returns>
-        public Task<T> ExecuteScalar<T>(string sql, object param = null, CommandType? commandType = null)
+        public Task<T> ExecuteScalar<T>(string sql, object param = null, IUnitOfWork uow = null, CommandType? commandType = null)
         {
-            return Conn.ExecuteScalarAsync<T>(sql, param, Transaction, commandType: commandType);
+            var conn = OpenConn(uow, out IDbTransaction tran);
+            return conn.ExecuteScalarAsync<T>(sql, param, tran, commandType: commandType);
         }
 
         #endregion
@@ -123,10 +122,12 @@ namespace Mkh.Data.Core.Repository
         /// <param name="sql">sql语句</param>
         /// <param name="param">参数</param>
         /// <param name="commandType">命令类型</param>
+        /// <param name="uow"></param>
         /// <returns></returns>
-        public Task<IDataReader> ExecuteReader(string sql, object param = null, CommandType? commandType = null)
+        public Task<IDataReader> ExecuteReader(string sql, object param = null, IUnitOfWork uow = null, CommandType? commandType = null)
         {
-            return Conn.ExecuteReaderAsync(sql, param, Transaction, commandType: commandType);
+            var conn = OpenConn(uow, out IDbTransaction tran);
+            return conn.ExecuteReaderAsync(sql, param, tran, commandType: commandType);
         }
 
         #endregion
@@ -139,10 +140,12 @@ namespace Mkh.Data.Core.Repository
         /// <param name="sql">sql语句</param>
         /// <param name="param">参数</param>
         /// <param name="commandType">命令类型</param>
+        /// <param name="uow"></param>
         /// <returns></returns>
-        public Task<dynamic> QueryFirstOrDefault(string sql, object param = null, CommandType? commandType = null)
+        public Task<dynamic> QueryFirstOrDefault(string sql, object param = null, IUnitOfWork uow = null, CommandType? commandType = null)
         {
-            return Conn.QueryFirstOrDefaultAsync(sql, param, Transaction, commandType: commandType);
+            var conn = OpenConn(uow, out IDbTransaction tran);
+            return conn.QueryFirstOrDefaultAsync(sql, param, tran, commandType: commandType);
         }
 
         /// <summary>
@@ -151,10 +154,12 @@ namespace Mkh.Data.Core.Repository
         /// <param name="sql">sql语句</param>
         /// <param name="param">参数</param>
         /// <param name="commandType">命令类型</param>
+        /// <param name="uow"></param>
         /// <returns></returns>
-        public Task<T> QueryFirstOrDefault<T>(string sql, object param = null, CommandType? commandType = null)
+        public Task<T> QueryFirstOrDefault<T>(string sql, object param = null, IUnitOfWork uow = null, CommandType? commandType = null)
         {
-            return Conn.QueryFirstOrDefaultAsync<T>(sql, param, Transaction, commandType: commandType);
+            var conn = OpenConn(uow, out IDbTransaction tran);
+            return conn.QueryFirstOrDefaultAsync<T>(sql, param, tran, commandType: commandType);
         }
 
         #endregion
@@ -167,10 +172,12 @@ namespace Mkh.Data.Core.Repository
         /// <param name="sql">sql语句</param>
         /// <param name="param">参数</param>
         /// <param name="commandType">命令类型</param>
+        /// <param name="uow"></param>
         /// <returns></returns>
-        public Task<dynamic> QuerySingleOrDefault(string sql, object param = null, CommandType? commandType = null)
+        public Task<dynamic> QuerySingleOrDefault(string sql, object param = null, IUnitOfWork uow = null, CommandType? commandType = null)
         {
-            return Conn.QuerySingleOrDefaultAsync(sql, param, Transaction, commandType: commandType);
+            var conn = OpenConn(uow, out IDbTransaction tran);
+            return conn.QuerySingleOrDefaultAsync(sql, param, tran, commandType: commandType);
         }
 
         /// <summary>
@@ -179,10 +186,12 @@ namespace Mkh.Data.Core.Repository
         /// <param name="sql">sql语句</param>
         /// <param name="param">参数</param>
         /// <param name="commandType">命令类型</param>
+        /// <param name="uow"></param>
         /// <returns></returns>
-        public Task<T> QuerySingleOrDefault<T>(string sql, object param = null, CommandType? commandType = null)
+        public Task<T> QuerySingleOrDefault<T>(string sql, object param = null, IUnitOfWork uow = null, CommandType? commandType = null)
         {
-            return Conn.QuerySingleOrDefaultAsync<T>(sql, param, Transaction, commandType: commandType);
+            var conn = OpenConn(uow, out IDbTransaction tran);
+            return conn.QuerySingleOrDefaultAsync<T>(sql, param, tran, commandType: commandType);
         }
 
         #endregion
@@ -194,11 +203,13 @@ namespace Mkh.Data.Core.Repository
         /// </summary>
         /// <param name="sql">sql语句</param>
         /// <param name="param">参数</param>
+        /// <param name="uow"></param>
         /// <param name="commandType">命令类型</param>
         /// <returns></returns>
-        public Task<SqlMapper.GridReader> QueryMultiple(string sql, object param = null, CommandType? commandType = null)
+        public Task<SqlMapper.GridReader> QueryMultiple(string sql, object param = null, IUnitOfWork uow = null, CommandType? commandType = null)
         {
-            return Conn.QueryMultipleAsync(sql, param, Transaction, commandType: commandType);
+            var conn = OpenConn(uow, out IDbTransaction tran);
+            return conn.QueryMultipleAsync(sql, param, tran, commandType: commandType);
         }
 
         #endregion
@@ -210,11 +221,13 @@ namespace Mkh.Data.Core.Repository
         /// </summary>
         /// <param name="sql"></param>
         /// <param name="param"></param>
+        /// <param name="uow"></param>
         /// <param name="commandType"></param>
         /// <returns></returns>
-        public Task<IEnumerable<dynamic>> Query(string sql, object param = null, CommandType? commandType = null)
+        public Task<IEnumerable<dynamic>> Query(string sql, object param = null, IUnitOfWork uow = null, CommandType? commandType = null)
         {
-            return Conn.QueryAsync(sql, param, Transaction, commandType: commandType);
+            var conn = OpenConn(uow, out IDbTransaction tran);
+            return conn.QueryAsync(sql, param, tran, commandType: commandType);
         }
 
         /// <summary>
@@ -222,11 +235,13 @@ namespace Mkh.Data.Core.Repository
         /// </summary>
         /// <param name="sql">sql语句</param>
         /// <param name="param">参数</param>
+        /// <param name="uow"></param>
         /// <param name="commandType">命令类型</param>
         /// <returns></returns>
-        public Task<IEnumerable<T>> Query<T>(string sql, object param = null, CommandType? commandType = null)
+        public Task<IEnumerable<T>> Query<T>(string sql, object param = null, IUnitOfWork uow = null, CommandType? commandType = null)
         {
-            return Conn.QueryAsync<T>(sql, param, Transaction, commandType: commandType);
+            var conn = OpenConn(uow, out IDbTransaction tran);
+            return conn.QueryAsync<T>(sql, param, tran, commandType: commandType);
         }
 
         #endregion
@@ -234,6 +249,24 @@ namespace Mkh.Data.Core.Repository
         #endregion
 
         #region ==私有方法==
+
+        private IDbConnection OpenConn(IUnitOfWork uow, out IDbTransaction transaction)
+        {
+            if (uow != null)
+            {
+                transaction = uow.Transaction;
+                return uow.Transaction.Connection;
+            }
+            //先从事务中获取连接
+            if (Transaction != null)
+            {
+                transaction = Transaction;
+                return Transaction.Connection;
+            }
+
+            transaction = null;
+            return DbContext.NewConnection();
+        }
 
         /// <summary>
         /// 获取主键参数

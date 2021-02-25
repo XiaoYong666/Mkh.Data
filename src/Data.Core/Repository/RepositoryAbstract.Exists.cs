@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Mkh.Data.Abstractions;
 
 namespace Mkh.Data.Core.Repository
 {
@@ -9,7 +10,7 @@ namespace Mkh.Data.Core.Repository
     /// <typeparam name="TEntity"></typeparam>
     public abstract partial class RepositoryAbstract<TEntity>
     {
-        protected async Task<bool> Exists(dynamic id, string tableName)
+        protected async Task<bool> Exists(dynamic id, string tableName, IUnitOfWork uow = null)
         {
             //没有主键的表无法使用Exists方法
             if (EntityDescriptor.PrimaryKey.IsNo)
@@ -19,12 +20,12 @@ namespace Mkh.Data.Core.Repository
             var sql = _sql.GetExists(tableName);
 
             _logger.Write("Exists", sql);
-            return await QuerySingleOrDefault<int>(sql, dynParams) > 0;
+            return await QuerySingleOrDefault<int>(sql, dynParams, uow) > 0;
         }
 
-        public Task<bool> Exists(dynamic id)
+        public Task<bool> Exists(dynamic id, IUnitOfWork uow = null)
         {
-            return Exists(id, null);
+            return Exists(id, null, uow);
         }
     }
 }

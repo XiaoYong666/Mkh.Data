@@ -1,4 +1,5 @@
-﻿using Mkh.Data.Abstractions.Adapter;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Mkh.Data.Abstractions.Adapter;
 
 namespace Mkh.Data.Abstractions
 {
@@ -41,5 +42,10 @@ namespace Mkh.Data.Abstractions
         /// 表前缀
         /// </summary>
         public string TablePrefix { get; set; }
+
+        /// <summary>
+        /// 仓储服务生命周期类型
+        /// </summary>
+        public ServiceLifetime RepositoryServiceLifetime { get; set; } = ServiceLifetime.Singleton;
     }
 }

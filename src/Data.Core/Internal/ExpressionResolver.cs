@@ -2,12 +2,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Mkh.Data.Abstractions.Adapter;
+using Mkh.Data.Abstractions.Entities;
 using Mkh.Data.Abstractions.Queryable;
 using Mkh.Data.Core.Extensions;
 using Mkh.Data.Core.Internal.QueryStructure;
@@ -283,10 +285,10 @@ namespace Mkh.Data.Core.Internal
                     switch (w.Mode)
                     {
                         case QueryWhereMode.Lambda:
-                            ExpressionResolver.Resolve(queryBody, w.Lambda.Body, w.Lambda, sqlBuilder, parameters);
+                            Resolve(queryBody, w.Lambda.Body, w.Lambda, sqlBuilder, parameters);
                             break;
                         case QueryWhereMode.SubQuery:
-                            ExpressionResolver.Resolve(queryBody, w.SubQueryColumn.Body, w.SubQueryColumn, sqlBuilder, parameters);
+                            Resolve(queryBody, w.SubQueryColumn.Body, w.SubQueryColumn, sqlBuilder, parameters);
                             var subSql = w.SubQueryable.ToListSql(parameters);
                             sqlBuilder.AppendFormat("{0} ({1})", w.SubQueryOperator, subSql);
                             break;
@@ -344,7 +346,7 @@ namespace Mkh.Data.Core.Internal
                 if (!join.EntityDescriptor.IsSoftDelete || join.Type == JoinType.Inner)
                     return;
 
-                sqlBuilder.AppendFormat("{0}.{1} = {2} AND ", dbAdapter.AppendQuote(join.Alias), dbAdapter.AppendQuote(join.EntityDescriptor.GetDeletedColumnName()), dbAdapter.BooleanFalseValue);
+                sqlBuilder.AppendFormat("{0}.{1} = {2} AND ", join.Alias, dbAdapter.AppendQuote(join.EntityDescriptor.GetDeletedColumnName()), dbAdapter.BooleanFalseValue);
             }
         }
 
@@ -387,7 +389,7 @@ namespace Mkh.Data.Core.Internal
                     return;
 
                 //多表时附加别名
-                var x0 = dbAdapter.AppendQuote(join.Alias);
+                var x0 = join.Alias;
                 var x1 = dbAdapter.AppendQuote(DbConstants.TENANT_COLUMN_NAME);
                 if (tenantId == null)
                 {
@@ -409,14 +411,14 @@ namespace Mkh.Data.Core.Internal
         /// </summary>
         private static void ResolveBinary(QueryBody queryBody, BinaryExpression exp, LambdaExpression fullLambda, StringBuilder sqlBuilder, IQueryParameters parameters)
         {
-            //针对简写方式的布尔类型解析m=>m.Deleted
+            //针对简写方式的布尔类型解析m => m.Deleted
             if (exp.Left.NodeType == ExpressionType.MemberAccess && exp.Left.Type == typeof(bool) && exp.NodeType != ExpressionType.Equal && exp.NodeType != ExpressionType.NotEqual)
             {
                 ResolveMember(queryBody, exp.Left as MemberExpression, fullLambda, sqlBuilder, parameters);
                 sqlBuilder.Append(" = ");
                 AppendValue(queryBody, queryBody.DbAdapter.BooleanTrueValue, sqlBuilder, parameters);
             }
-            //针对简写方式的布尔类型解析m=>!m.Deleted
+            //针对简写方式的布尔类型解析m => !m.Deleted
             else if (exp.Left.NodeType == ExpressionType.Not)
             {
                 ResolveMember(queryBody, (exp.Left as UnaryExpression)!.Operand as MemberExpression, fullLambda, sqlBuilder, parameters);
@@ -483,7 +485,7 @@ namespace Mkh.Data.Core.Internal
                 switch (exp.Expression.NodeType)
                 {
                     case ExpressionType.Parameter:
-                        sqlBuilder.Append(queryBody.GetColumnName(exp, fullLambda));
+                        sqlBuilder.Append(queryBody.GetColumnName(exp));
                         break;
                     case ExpressionType.Constant:
                         var val = ResolveDynamicInvoke(exp);
@@ -494,17 +496,22 @@ namespace Mkh.Data.Core.Internal
                         {
                             val = ResolveDynamicInvoke(exp);
                             AppendValue(queryBody, val, sqlBuilder, parameters);
-                            return;
                         }
-                        if (exp.Expression.Type.IsString())
+                        else if (exp.Expression.Type.IsString())
                         {
-                            var columnName = queryBody.GetColumnName(exp.Expression as MemberExpression, fullLambda);
+                            var columnName = queryBody.GetColumnName(exp.Expression);
                             sqlBuilder.AppendFormat("{0}", queryBody.DbAdapter.FunctionMapper(exp.Member.Name, columnName));
+                        }
+                        else if (DbConstants.ENTITY_INTERFACE_TYPE.IsImplementType(exp.Expression.Type))
+                        {
+                            //多表连接解析列信息，如：m.T1.Id
+                            var columnName = queryBody.GetColumnName(exp);
+                            sqlBuilder.Append(columnName);
                         }
                         break;
                 }
 
-                //针对简写方式的布尔类型解析m=>m.Deleted
+                //针对简写方式的布尔类型解析 m => m.Deleted
                 if (exp == fullLambda.Body && exp.NodeType == ExpressionType.MemberAccess && exp.Type == typeof(bool))
                 {
                     sqlBuilder.Append(" = ");
@@ -518,21 +525,20 @@ namespace Mkh.Data.Core.Internal
         /// </summary>
         private static void ResolveCall(QueryBody queryBody, MethodCallExpression exp, LambdaExpression fullLambda, StringBuilder sqlBuilder, IQueryParameters parameters)
         {
-            MemberExpression memberExp;
             string columnName;
             switch (exp.Method.Name)
             {
                 case "Contains":
-                    ResolveMethodForContains(queryBody, exp, fullLambda, sqlBuilder, parameters);
+                    ResolveMethodForContains(queryBody, exp, sqlBuilder, parameters);
                     break;
                 case "NotContains":
-                    ResolveMethodForNotContains(queryBody, exp, fullLambda, sqlBuilder);
+                    ResolveMethodForNotContains(queryBody, exp, sqlBuilder);
                     break;
                 case "StartsWith":
-                    ResolveMethodForStartsWith(queryBody, exp, fullLambda, sqlBuilder, parameters);
+                    ResolveMethodForStartsWith(queryBody, exp, sqlBuilder, parameters);
                     break;
                 case "EndsWith":
-                    ResolveMethodForEndsWith(queryBody, exp, fullLambda, sqlBuilder, parameters);
+                    ResolveMethodForEndsWith(queryBody, exp, sqlBuilder, parameters);
                     break;
                 case "Equals":
                     ResolveMethodForEquals(queryBody, exp, fullLambda, sqlBuilder, parameters);
@@ -541,9 +547,8 @@ namespace Mkh.Data.Core.Internal
                 case "Avg":
                 case "Max":
                 case "Min":
-                    var fullExp = (exp.Arguments[0] as UnaryExpression).Operand as LambdaExpression;
-                    memberExp = fullExp.Body as MemberExpression;
-                    columnName = queryBody.GetColumnName(memberExp, fullExp);
+                    var fullExp = (exp.Arguments[0] as UnaryExpression)!.Operand as LambdaExpression;
+                    columnName = queryBody.GetColumnName(fullExp!.Body);
                     sqlBuilder.AppendFormat(" {0}", queryBody.DbAdapter.FunctionMapper(exp.Method.Name, columnName));
                     break;
                 default:
@@ -556,8 +561,7 @@ namespace Mkh.Data.Core.Internal
                                 AppendValue(queryBody, val, sqlBuilder, parameters);
                                 break;
                             case ExpressionType.MemberAccess:
-                                memberExp = exp!.Object as MemberExpression;
-                                columnName = queryBody.GetColumnName(memberExp, fullLambda);
+                                columnName = queryBody.GetColumnName(exp!.Object);
                                 var args = Arguments2Object(exp.Arguments);
                                 sqlBuilder.AppendFormat("{0}", queryBody.DbAdapter.FunctionMapper(exp.Method.Name, columnName, exp.Object.Type, args));
                                 break;
@@ -603,14 +607,15 @@ namespace Mkh.Data.Core.Internal
         /// <summary>
         /// 解析Contains方法
         /// </summary>
-        private static void ResolveMethodForContains(QueryBody queryBody, MethodCallExpression exp, LambdaExpression fullLambda, StringBuilder sqlBuilder, IQueryParameters parameters)
+        private static void ResolveMethodForContains(QueryBody queryBody, MethodCallExpression exp, StringBuilder sqlBuilder, IQueryParameters parameters)
         {
             if (exp.Object is MemberExpression objExp)
             {
-                //string的Contains方法
-                if (objExp.Expression!.NodeType == ExpressionType.Parameter)
+                #region ==字符串类型的Contains方法==
+
+                if (objExp.Type.IsString())
                 {
-                    sqlBuilder.Append(queryBody.GetColumnName(objExp, fullLambda));
+                    sqlBuilder.Append(queryBody.GetColumnName(objExp));
 
                     string value;
                     if (exp.Arguments[0] is ConstantExpression c)
@@ -625,37 +630,40 @@ namespace Mkh.Data.Core.Internal
                     sqlBuilder.Append(" LIKE ");
 
                     AppendValue(queryBody, $"%{value}%", sqlBuilder, parameters);
+                    return;
                 }
-                else if (objExp.Type.IsGenericType && exp.Arguments[0] is MemberExpression argExp && argExp.Expression!.NodeType == ExpressionType.Parameter)
+
+                #endregion
+
+                if (objExp.Type.IsGenericType)
                 {
-                    var columnName = queryBody.GetColumnName(argExp, fullLambda);
-                    ResolveInForGeneric(sqlBuilder, columnName, objExp, argExp.Type);
+                    var columnName = queryBody.GetColumnName(exp.Arguments[0]);
+                    ResolveInForGeneric(sqlBuilder, columnName, objExp, (exp.Arguments[0] as MemberExpression)!.Type);
                 }
+
+                return;
             }
-            else if (exp.Arguments[0].Type.IsArray && exp.Arguments[1] is MemberExpression argExp && argExp.Expression!.NodeType == ExpressionType.Parameter)
+
+            #region ==数组、泛型类型的Contains方法==
+
+            if (exp.Arguments[1] is MemberExpression argExp1)
             {
-                var columnName = queryBody.GetColumnName(argExp, fullLambda);
-                ResolveInForArray(sqlBuilder, columnName, exp.Arguments[0], argExp.Type);
+                var columnName = queryBody.GetColumnName(argExp1);
+                ResolveInForGeneric(sqlBuilder, columnName, exp.Arguments[0], argExp1.Type);
             }
+
+            #endregion
         }
 
         /// <summary>
         /// 解析NotContains方法
         /// </summary>
-        private static void ResolveMethodForNotContains(QueryBody queryBody, MethodCallExpression exp, LambdaExpression fullLambda, StringBuilder sqlBuilder)
+        private static void ResolveMethodForNotContains(QueryBody queryBody, MethodCallExpression exp, StringBuilder sqlBuilder)
         {
-            var fieldType = exp.Arguments[0].Type;
             var argExp = exp.Arguments[1] as MemberExpression;
-            var columnName = queryBody.GetColumnName(argExp, fullLambda);
+            var columnName = queryBody.GetColumnName(argExp);
 
-            if (fieldType.IsGenericType)
-            {
-                ResolveInForGeneric(sqlBuilder, columnName, exp.Arguments[0], argExp!.Type, true);
-            }
-            else if (fieldType.IsArray)
-            {
-                ResolveInForArray(sqlBuilder, columnName, exp.Arguments[0], argExp!.Type, true);
-            }
+            ResolveInForGeneric(sqlBuilder, columnName, exp.Arguments[0], argExp!.Type, true);
         }
 
         private static void ResolveInForGeneric(StringBuilder sqlBuilder, string columnName, Expression exp, Type valueType, bool notContainer = false)
@@ -675,93 +683,108 @@ namespace Mkh.Data.Core.Internal
                     }
                 }
             }
-            else if (valueType.IsString())
+            else
             {
-                list = value as List<string>;
-            }
-            else if (valueType.IsGuid())
-            {
-                if (value is List<Guid> valueList)
+                var typeName = valueType.Name;
+                switch (typeName)
                 {
-                    foreach (var c in valueList)
-                    {
-                        list.Add(c.ToString());
-                    }
-                }
-            }
-            else if (valueType.IsChar())
-            {
-                if (value is List<char> valueList)
-                {
-                    foreach (var c in valueList)
-                    {
-                        list.Add(c.ToString());
-                    }
-                }
-            }
-            else if (valueType.IsDateTime())
-            {
-                if (value is List<DateTime> valueList)
-                {
-                    foreach (var c in valueList)
-                    {
-                        list.Add(c.ToString("yyyy-MM-dd HH:mm:ss"));
-                    }
-                }
-            }
-            else if (valueType.IsInt())
-            {
-                isValueType = true;
-                if (value is List<int> valueList)
-                {
-                    foreach (var c in valueList)
-                    {
-                        list.Add(c.ToString());
-                    }
-                }
-            }
-            else if (valueType.IsLong())
-            {
-                isValueType = true;
-                if (value is List<long> valueList)
-                {
-                    foreach (var c in valueList)
-                    {
-                        list.Add(c.ToString());
-                    }
-                }
-            }
-            else if (valueType.IsDouble())
-            {
-                isValueType = true;
-                if (value is List<double> valueList)
-                {
-                    foreach (var c in valueList)
-                    {
-                        list.Add(c.ToString(CultureInfo.InvariantCulture));
-                    }
-                }
-            }
-            else if (valueType.IsFloat())
-            {
-                isValueType = true;
-                if (value is List<float> valueList)
-                {
-                    foreach (var c in valueList)
-                    {
-                        list.Add(c.ToString(CultureInfo.InvariantCulture));
-                    }
-                }
-            }
-            else if (valueType.IsDecimal())
-            {
-                isValueType = true;
-                if (value is List<decimal> valueList)
-                {
-                    foreach (var c in valueList)
-                    {
-                        list.Add(c.ToString(CultureInfo.InvariantCulture));
-                    }
+                    case "Guid":
+                        if (value is IEnumerable<Guid> guidValues)
+                        {
+                            foreach (var c in guidValues)
+                            {
+                                list.Add(c.ToString());
+                            }
+                        }
+                        break;
+                    case "DateTime":
+                        if (value is IEnumerable<DateTime> dateTimeValues)
+                        {
+                            foreach (var c in dateTimeValues)
+                            {
+                                list.Add(c.ToString("yyyy-MM-dd HH:mm:ss"));
+                            }
+                        }
+                        break;
+                    case "Byte":
+                        isValueType = true;
+                        if (value is IEnumerable<byte> byteValues)
+                        {
+                            foreach (var c in byteValues)
+                            {
+                                list.Add(c.ToString(CultureInfo.InvariantCulture));
+                            }
+                        }
+                        break;
+                    case "Char":
+                        if (value is IEnumerable<char> charValues)
+                        {
+                            foreach (var c in charValues)
+                            {
+                                list.Add(c.ToString());
+                            }
+                        }
+                        break;
+                    case "Int16":
+                        isValueType = true;
+                        if (value is IEnumerable<short> shortValues)
+                        {
+                            foreach (var c in shortValues)
+                            {
+                                list.Add(c.ToString());
+                            }
+                        }
+                        break;
+                    case "Int32":
+                        isValueType = true;
+                        if (value is IEnumerable<int> intValues)
+                        {
+                            foreach (var c in intValues)
+                            {
+                                list.Add(c.ToString());
+                            }
+                        }
+                        break;
+                    case "Int64":
+                        isValueType = true;
+                        if (value is IEnumerable<long> longValues)
+                        {
+                            foreach (var c in longValues)
+                            {
+                                list.Add(c.ToString());
+                            }
+                        }
+                        break;
+                    case "Double":
+                        isValueType = true;
+                        if (value is IEnumerable<double> doubleValues)
+                        {
+                            foreach (var c in doubleValues)
+                            {
+                                list.Add(c.ToString(CultureInfo.InvariantCulture));
+                            }
+                        }
+                        break;
+                    case "Single":
+                        isValueType = true;
+                        if (value is IEnumerable<float> floatValues)
+                        {
+                            foreach (var c in floatValues)
+                            {
+                                list.Add(c.ToString(CultureInfo.InvariantCulture));
+                            }
+                        }
+                        break;
+                    case "Decimal":
+                        isValueType = true;
+                        if (value is IEnumerable<decimal> decimalValues)
+                        {
+                            foreach (var c in decimalValues)
+                            {
+                                list.Add(c.ToString(CultureInfo.InvariantCulture));
+                            }
+                        }
+                        break;
                 }
             }
 
@@ -798,180 +821,14 @@ namespace Mkh.Data.Core.Internal
             sqlBuilder.Append(")");
         }
 
-        private static void ResolveInForArray(StringBuilder sqlBuilder, string columnName, Expression exp, Type valueType, bool notContainer = false)
-        {
-            var value = ResolveDynamicInvoke(exp);
-            //是否是值类型
-            var isValueType = false;
-            var list = new List<string>();
-            if (valueType.IsEnum)
-            {
-                isValueType = true;
-                var valueList = (IEnumerable)value;
-                foreach (var c in valueList)
-                {
-                    list.Add(Enum.Parse(valueType, c.ToString()!).ToInt().ToString());
-                }
-            }
-            else if (valueType.IsString())
-            {
-                if (value is string[] valueList)
-                {
-                    foreach (var val in valueList)
-                    {
-                        list.Add(val);
-                    }
-                }
-            }
-            else if (valueType.IsGuid())
-            {
-                if (value is Guid[] valueList)
-                {
-                    foreach (var val in valueList)
-                    {
-                        list.Add(val.ToString());
-                    }
-                }
-            }
-            else if (valueType.IsChar())
-            {
-                if (value is char[] valueList)
-                {
-                    foreach (var val in valueList)
-                    {
-                        list.Add(val.ToString());
-                    }
-                }
-            }
-            else if (valueType.IsDateTime())
-            {
-                if (value is DateTime[] valueList)
-                {
-                    foreach (var val in valueList)
-                    {
-                        list.Add(val.ToString("yyyy-MM-dd HH:mm:ss"));
-                    }
-                }
-            }
-            else if (valueType.IsByte())
-            {
-                isValueType = true;
-                if (value is byte[] valueList)
-                {
-                    foreach (var val in valueList)
-                    {
-                        list.Add(val.ToString());
-                    }
-                }
-            }
-            else if (valueType.IsInt())
-            {
-                isValueType = true;
-                if (value is int[] valueList)
-                {
-                    foreach (var val in valueList)
-                    {
-                        list.Add(val.ToString());
-                    }
-                }
-            }
-            else if (valueType.IsLong())
-            {
-                isValueType = true;
-                if (value is long[] valueList)
-                {
-                    foreach (var val in valueList)
-                    {
-                        list.Add(val.ToString());
-                    }
-                }
-            }
-            else if (valueType.IsDouble())
-            {
-                isValueType = true;
-                if (value is double[] valueList)
-                {
-                    foreach (var val in valueList)
-                    {
-                        list.Add(val.ToString(CultureInfo.InvariantCulture));
-                    }
-                }
-            }
-            else if (valueType.IsShort())
-            {
-                isValueType = true;
-                if (value is short[] valueList)
-                {
-                    foreach (var val in valueList)
-                    {
-                        list.Add(val.ToString());
-                    }
-                }
-            }
-            else if (valueType.IsFloat())
-            {
-                isValueType = true;
-                if (value is float[] valueList)
-                {
-                    foreach (var val in valueList)
-                    {
-                        list.Add(val.ToString(CultureInfo.InvariantCulture));
-                    }
-                }
-            }
-            else if (valueType.IsDecimal())
-            {
-                isValueType = true;
-                if (value is decimal[] valueList)
-                {
-                    foreach (var val in valueList)
-                    {
-                        list.Add(val.ToString(CultureInfo.InvariantCulture));
-                    }
-                }
-            }
-
-            if (list.Count < 1)
-                return;
-
-            sqlBuilder.Append(columnName);
-            sqlBuilder.Append(notContainer ? " NOT IN (" : " IN (");
-
-            //值类型不带引号
-            if (isValueType)
-            {
-                for (var i = 0; i < list.Count; i++)
-                {
-                    sqlBuilder.AppendFormat("{0}", list[i]);
-                    if (i != list.Count - 1)
-                    {
-                        sqlBuilder.Append(",");
-                    }
-                }
-            }
-            else
-            {
-                for (var i = 0; i < list.Count; i++)
-                {
-                    sqlBuilder.AppendFormat("'{0}'", list[i].Replace("'", "''"));
-                    if (i != list.Count - 1)
-                    {
-                        sqlBuilder.Append(",");
-                    }
-                }
-            }
-
-            sqlBuilder.Append(")");
-        }
-
         /// <summary>
         /// 解析StartsWith方法
         /// </summary>
-        private static void ResolveMethodForStartsWith(QueryBody queryBody, MethodCallExpression exp, LambdaExpression fullLambda, StringBuilder sqlBuilder, IQueryParameters parameters)
+        private static void ResolveMethodForStartsWith(QueryBody queryBody, MethodCallExpression exp, StringBuilder sqlBuilder, IQueryParameters parameters)
         {
-            if (exp.Object is MemberExpression objExp && objExp.Expression!.NodeType == ExpressionType.Parameter)
+            if (exp.Object is MemberExpression objExp)
             {
-                sqlBuilder.Append(queryBody.GetColumnName(objExp, fullLambda));
+                sqlBuilder.Append(queryBody.GetColumnName(objExp));
 
                 string value;
                 if (exp.Arguments[0] is ConstantExpression c)
@@ -992,11 +849,11 @@ namespace Mkh.Data.Core.Internal
         /// <summary>
         /// 解析EndsWith方法
         /// </summary>
-        private static void ResolveMethodForEndsWith(QueryBody queryBody, MethodCallExpression exp, LambdaExpression fullLambda, StringBuilder sqlBuilder, IQueryParameters parameters)
+        private static void ResolveMethodForEndsWith(QueryBody queryBody, MethodCallExpression exp, StringBuilder sqlBuilder, IQueryParameters parameters)
         {
-            if (exp.Object is MemberExpression objExp && objExp.Expression!.NodeType == ExpressionType.Parameter)
+            if (exp.Object is MemberExpression objExp)
             {
-                sqlBuilder.Append(queryBody.GetColumnName(objExp, fullLambda));
+                sqlBuilder.Append(queryBody.GetColumnName(objExp));
 
                 string value;
                 if (exp.Arguments[0] is ConstantExpression c)
@@ -1019,28 +876,27 @@ namespace Mkh.Data.Core.Internal
         /// </summary>
         private static void ResolveMethodForEquals(QueryBody queryBody, MethodCallExpression exp, LambdaExpression fullLambda, StringBuilder sqlBuilder, IQueryParameters parameters)
         {
-            if (exp.Object is MemberExpression objExp && objExp.Expression!.NodeType == ExpressionType.Parameter)
+            if (exp.Object is MemberExpression objExp)
             {
-                sqlBuilder.Append(queryBody.GetColumnName(objExp, fullLambda));
+                sqlBuilder.Append(queryBody.GetColumnName(objExp));
 
                 sqlBuilder.Append(" = ");
 
                 var arg = exp.Arguments[0];
-                if (arg is ConstantExpression c)
+                switch (arg.NodeType)
                 {
-                    AppendValue(queryBody, c.Value!.ToString(), sqlBuilder, parameters);
-                }
-                else if (arg.NodeType == ExpressionType.MemberAccess)
-                {
-                    ResolveMember(queryBody, arg as MemberExpression, fullLambda, sqlBuilder, parameters);
-                }
-                else if (arg.NodeType == ExpressionType.Convert)
-                {
-                    Resolve(queryBody, (arg as UnaryExpression)!.Operand, fullLambda, sqlBuilder, parameters);
-                }
-                else
-                {
-                    AppendValue(queryBody, ResolveDynamicInvoke(arg).ToString(), sqlBuilder, parameters);
+                    case ExpressionType.Constant:
+                        AppendValue(queryBody, (arg as ConstantExpression)!.Value!.ToString(), sqlBuilder, parameters);
+                        break;
+                    case ExpressionType.MemberAccess:
+                        ResolveMember(queryBody, arg as MemberExpression, fullLambda, sqlBuilder, parameters);
+                        break;
+                    case ExpressionType.Convert:
+                        Resolve(queryBody, (arg as UnaryExpression)!.Operand, fullLambda, sqlBuilder, parameters);
+                        break;
+                    default:
+                        AppendValue(queryBody, ResolveDynamicInvoke(arg).ToString(), sqlBuilder, parameters);
+                        break;
                 }
             }
         }

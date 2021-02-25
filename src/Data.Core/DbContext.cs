@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Data;
 using Mkh.Data.Abstractions;
 using Mkh.Data.Abstractions.Adapter;
@@ -11,8 +10,6 @@ namespace Mkh.Data.Core
     public abstract class DbContext : IDbContext
     {
         #region ==属性==
-
-        public IServiceProvider Services { get; internal set; }
 
         public DbOptions Options { get; internal set; }
 
@@ -35,14 +32,9 @@ namespace Mkh.Data.Core
             return Adapter.NewConnection(Options.ConnectionString);
         }
 
-        public IUnitOfWork NewUnitOfWork()
+        public IUnitOfWork NewUnitOfWork(IsolationLevel? isolationLevel = null)
         {
-            return new UnitOfWorkAbstract(this);
-        }
-
-        public IUnitOfWork NewUnitOfWork(IsolationLevel isolationLevel)
-        {
-            return new UnitOfWorkAbstract(this, isolationLevel);
+            return new UnitOfWork(this, isolationLevel);
         }
 
         #endregion

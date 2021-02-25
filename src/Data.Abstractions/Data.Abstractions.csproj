@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Description>17mkh数据访问抽象库</Description>
+    <Description>17MKH数据访问抽象库</Description>
   </PropertyGroup>
 
   <ItemGroup>

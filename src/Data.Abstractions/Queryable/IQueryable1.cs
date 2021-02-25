@@ -327,7 +327,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <param name="noLock">针对SqlServer的NoLock特性，默认开启</param>
         /// <typeparam name="TEntity2"></typeparam>
         /// <returns></returns>
-        IQueryable<TEntity, TEntity2> LeftJoin<TEntity2>(Expression<Func<TEntity, TEntity2, bool>> onExpression, string tableName = null, bool noLock = true) where TEntity2 : IEntity, new();
+        IQueryable<TEntity, TEntity2> LeftJoin<TEntity2>(Expression<Func<IQueryableJoins<TEntity, TEntity2>, bool>> onExpression, string tableName = null, bool noLock = true) where TEntity2 : IEntity, new();
 
         /// <summary>
         /// 内连接
@@ -337,7 +337,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <param name="tableName">自定义表名</param>
         /// <param name="noLock">针对SqlServer的NoLock特性，默认开启</param>
         /// <returns></returns>
-        IQueryable<TEntity, TEntity2> InnerJoin<TEntity2>(Expression<Func<TEntity, TEntity2, bool>> onExpression, string tableName = null, bool noLock = true) where TEntity2 : IEntity, new();
+        IQueryable<TEntity, TEntity2> InnerJoin<TEntity2>(Expression<Func<IQueryableJoins<TEntity, TEntity2>, bool>> onExpression, string tableName = null, bool noLock = true) where TEntity2 : IEntity, new();
 
         /// <summary>
         /// 右连接
@@ -347,7 +347,7 @@ namespace Mkh.Data.Abstractions.Queryable
         /// <param name="tableName">自定义表名</param>
         /// <param name="noLock">针对SqlServer的NoLock特性，默认开启</param>
         /// <returns></returns>
-        IQueryable<TEntity, TEntity2> RightJoin<TEntity2>(Expression<Func<TEntity, TEntity2, bool>> onExpression, string tableName = null, bool noLock = true) where TEntity2 : IEntity, new();
+        IQueryable<TEntity, TEntity2> RightJoin<TEntity2>(Expression<Func<IQueryableJoins<TEntity, TEntity2>, bool>> onExpression, string tableName = null, bool noLock = true) where TEntity2 : IEntity, new();
 
         #endregion
 
@@ -641,6 +641,17 @@ namespace Mkh.Data.Abstractions.Queryable
         /// </summary>
         /// <returns></returns>
         IQueryable<TEntity> Copy();
+
+        #endregion
+
+        #region ==UseUow==
+
+        /// <summary>
+        /// 使用工作单元
+        /// </summary>
+        /// <param name="uow"></param>
+        /// <returns></returns>
+        IQueryable<TEntity> UseUow(IUnitOfWork uow);
 
         #endregion
     }

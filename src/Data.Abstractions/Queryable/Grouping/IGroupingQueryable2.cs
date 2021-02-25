@@ -5,12 +5,9 @@ using Mkh.Data.Abstractions.Entities;
 namespace Mkh.Data.Abstractions.Queryable.Grouping
 {
     /// <summary>
-    /// 单表分组查询对象
+    /// 分组查询对象
     /// </summary>
-    /// <typeparam name="TEntity"></typeparam>
-    /// <typeparam name="TKey"></typeparam>
-    /// <typeparam name="TEntity2"></typeparam>
-    public interface IGroupingQueryable<TKey, TEntity, TEntity2> : IGroupingQueryable where TEntity : IEntity where TEntity2 : IEntity
+    public interface IGroupingQueryable<TKey, TEntity, TEntity2> : IGroupingQueryable where TEntity : IEntity, new() where TEntity2 : IEntity, new()
     {
         /// <summary>
         /// 聚合过滤
@@ -63,14 +60,14 @@ namespace Mkh.Data.Abstractions.Queryable.Grouping
         IGroupingQueryable<TKey, TEntity, TEntity2> Select<TResult>(Expression<Func<IGrouping<TKey, TEntity, TEntity2>, TResult>> expression);
     }
 
-    public interface IGrouping<out TKey, TEntity, TEntity2> : IGrouping<TKey> where TEntity : IEntity where TEntity2 : IEntity
+    public interface IGrouping<out TKey, TEntity, TEntity2> : IGrouping<TKey> where TEntity : IEntity, new() where TEntity2 : IEntity, new()
     {
-        TResult Max<TResult>(Expression<Func<TEntity, TEntity2, TResult>> where);
+        TResult Max<TResult>(Expression<Func<IQueryableJoins<TEntity, TEntity2>, TResult>> where);
 
-        TResult Min<TResult>(Expression<Func<TEntity, TEntity2, TResult>> where);
+        TResult Min<TResult>(Expression<Func<IQueryableJoins<TEntity, TEntity2>, TResult>> where);
 
-        TResult Sum<TResult>(Expression<Func<TEntity, TEntity2, TResult>> where);
+        TResult Sum<TResult>(Expression<Func<IQueryableJoins<TEntity, TEntity2>, TResult>> where);
 
-        TResult Avg<TResult>(Expression<Func<TEntity, TEntity2, TResult>> where);
+        TResult Avg<TResult>(Expression<Func<IQueryableJoins<TEntity, TEntity2>, TResult>> where);
     }
 }

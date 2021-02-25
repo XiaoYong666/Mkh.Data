@@ -9,6 +9,7 @@ using System.Runtime.CompilerServices;
 #endif
 using Mkh.Data.Abstractions.Adapter;
 using Mkh.Data.Abstractions.Descriptors;
+using Mkh.Data.Abstractions.Entities;
 using Mkh.Data.Abstractions.Pagination;
 using Mkh.Data.Abstractions.Queryable;
 using Mkh.Data.Core.Extensions;
@@ -278,17 +279,17 @@ namespace Mkh.Data.Core.SqlBuilder
             var sqlBuilder = new StringBuilder();
             sqlBuilder.Append("SELECT ");
 
-            MemberExpression memberExp;
+            Expression memberExp;
             if (_queryBody.Select.FunctionExpression.Body.NodeType == ExpressionType.Convert)
             {
-                memberExp = (_queryBody.Select.FunctionExpression.Body as UnaryExpression)!.Operand as MemberExpression;
+                memberExp = (_queryBody.Select.FunctionExpression.Body as UnaryExpression)!.Operand;
             }
             else
             {
-                memberExp = _queryBody.Select.FunctionExpression.Body as MemberExpression;
+                memberExp = _queryBody.Select.FunctionExpression.Body;
             }
 
-            var columnName = _queryBody.GetColumnName(memberExp, _queryBody.Select.FunctionExpression);
+            var columnName = _queryBody.GetColumnName(memberExp);
 
             sqlBuilder.Append(_dbAdapter.FunctionMapper(_queryBody.Select.FunctionName, columnName));
 
@@ -593,7 +594,7 @@ namespace Mkh.Data.Core.SqlBuilder
                 //返回的单个列
                 if (body.NodeType == ExpressionType.MemberAccess)
                 {
-                    var col = _queryBody.GetColumnDescriptor(body as MemberExpression, lambda);
+                    var col = _queryBody.GetJoin(body as MemberExpression).Item2;
                     if (col != null)
                         list.Add(col);
 
@@ -616,7 +617,7 @@ namespace Mkh.Data.Core.SqlBuilder
                         //成员
                         if (arg.NodeType == ExpressionType.MemberAccess)
                         {
-                            var col = _queryBody.GetColumnDescriptor(arg as MemberExpression, lambda);
+                            var col = _queryBody.GetJoin(arg as MemberExpression).Item2;
                             if (col != null)
                                 list.Add(col);
                         }
@@ -679,8 +680,7 @@ namespace Mkh.Data.Core.SqlBuilder
                 //方法
                 if (arg.NodeType == ExpressionType.Call && arg is MethodCallExpression callExp)
                 {
-                    var memberExp = callExp!.Object as MemberExpression;
-                    var columnName = _queryBody.GetColumnName(memberExp, fullLambda);
+                    var columnName = _queryBody.GetColumnName(callExp!.Object);
                     var args = ExpressionResolver.Arguments2Object(callExp.Arguments);
                     sqlBuilder.AppendFormat("{0} AS {1},", _dbAdapter.FunctionMapper(callExp.Method.Name, columnName, callExp.Object!.Type, args), _dbAdapter.AppendQuote(alias));
                 }
@@ -690,21 +690,24 @@ namespace Mkh.Data.Core.SqlBuilder
         public void ResolveSelectForMember(StringBuilder sqlBuilder, MemberExpression memberExp, LambdaExpression fullLambda, List<IColumnDescriptor> excludeCols, string alias = null)
         {
             alias ??= memberExp.Member.Name;
-            if (memberExp.Expression!.NodeType == ExpressionType.MemberAccess)
+            string columnName;
+            if (DbConstants.ENTITY_INTERFACE_TYPE.IsImplementType(memberExp.Type))
             {
-                if (memberExp.Expression.Type.IsString())
-                {
-                    var columnName = _queryBody.GetColumnName(memberExp.Expression as MemberExpression, fullLambda);
-                    sqlBuilder.AppendFormat("{0} AS {1},", _dbAdapter.FunctionMapper(memberExp.Member.Name, columnName), _dbAdapter.AppendQuote(alias));
-                }
+                var index = _queryBody.Joins.FindIndex(m => m.EntityDescriptor.EntityType == memberExp.Type);
+                ResolveSelectForEntity(sqlBuilder, index, excludeCols);
             }
-            else
+            else if (memberExp.Expression!.Type.IsString())
             {
-                var column = _queryBody.GetColumnDescriptor(memberExp, fullLambda);
-                if (excludeCols != null && excludeCols.Any(m => m == column))
+                columnName = _queryBody.GetColumnName(memberExp);
+                sqlBuilder.AppendFormat("{0} AS {1},", _queryBody.DbAdapter.FunctionMapper(memberExp.Member.Name, columnName), _dbAdapter.AppendQuote(alias));
+            }
+            else if (DbConstants.ENTITY_INTERFACE_TYPE.IsImplementType(memberExp.Expression.Type))
+            {
+                var join = _queryBody.GetJoin(memberExp);
+                if (excludeCols != null && excludeCols.Any(m => m == join.Item2))
                     return;
 
-                var columnName = _queryBody.GetColumnName(memberExp, fullLambda);
+                columnName = _queryBody.GetColumnName(join.Item1, join.Item2);
                 sqlBuilder.AppendFormat("{0} AS {1},", columnName, _dbAdapter.AppendQuote(alias));
             }
         }
@@ -761,70 +764,80 @@ namespace Mkh.Data.Core.SqlBuilder
         /// </summary>
         private void ResolveSort(StringBuilder sqlBuilder, Expression exp, LambdaExpression fullExp, SortType sortType)
         {
-            var nodeType = exp.NodeType;
-
-            //OrderBy(m=>m.Id)
-            if (nodeType == ExpressionType.MemberAccess)
+            switch (exp.NodeType)
             {
-                ResolveSort(sqlBuilder, exp as MemberExpression, fullExp, sortType);
-                return;
-            }
-
-            //m => m.Title.Length
-            if (nodeType == ExpressionType.Convert && exp is UnaryExpression unaryExpression)
-            {
-                ResolveSort(sqlBuilder, unaryExpression.Operand as MemberExpression, fullExp, sortType);
-                return;
-            }
-
-            //m => m.Title.Substring(1)
-            if (nodeType == ExpressionType.Call)
-            {
-                var callExp = exp as MethodCallExpression;
-                var memberExp = callExp!.Object as MemberExpression;
-                var columnName = _queryBody.GetColumnName(memberExp, fullExp);
-                object[] args = null;
-                if (callExp.Arguments.Any())
-                {
-                    args = new object[callExp.Arguments.Count];
-
-                    for (int i = 0; i < callExp.Arguments.Count; i++)
+                case ExpressionType.MemberAccess:
+                    //m => m.Title
+                    //m => m.Title.Length
+                    //m => m.T1.Title
+                    //m => m.T1.Length
+                    //m => m.T1.Title.Length
+                    ResolveSort(sqlBuilder, exp as MemberExpression, sortType);
+                    break;
+                case ExpressionType.Convert:
+                    //m => m.Title.Length
+                    if (exp is UnaryExpression unaryExpression)
                     {
-                        args[i] = ((ConstantExpression)callExp.Arguments[i]).Value;
+                        ResolveSort(sqlBuilder, unaryExpression.Operand as MemberExpression, sortType);
                     }
-                }
-                sqlBuilder.AppendFormat(" {0} {1},", _dbAdapter.FunctionMapper(callExp.Method.Name, columnName, callExp.Object!.Type, args), sortType == SortType.Asc ? "ASC" : "DESC");
-                return;
-            }
-
-            //OrderBy(m=>new {m.Title.Substring(2)})
-            if (nodeType == ExpressionType.New && exp is NewExpression newExp)
-            {
-                foreach (var arg in newExp.Arguments)
-                {
-                    ResolveSort(sqlBuilder, arg, fullExp, sortType);
-                }
+                    break;
+                case ExpressionType.Call:
+                    var callExp = exp as MethodCallExpression;
+                    var memberExp = callExp!.Object as MemberExpression;
+                    var columnName = _queryBody.GetColumnName(memberExp);
+                    object[] args = null;
+                    if (callExp.Arguments.Any())
+                    {
+                        args = new object[callExp.Arguments.Count];
+                        for (int i = 0; i < callExp.Arguments.Count; i++)
+                        {
+                            args[i] = ((ConstantExpression)callExp.Arguments[i]).Value;
+                        }
+                    }
+                    sqlBuilder.AppendFormat(" {0} {1},", _dbAdapter.FunctionMapper(callExp.Method.Name, columnName, callExp.Object!.Type, args), sortType == SortType.Asc ? "ASC" : "DESC");
+                    break;
+                case ExpressionType.New:
+                    //m=>new { m.Title.Substring(2) }
+                    if (exp is NewExpression newExp)
+                    {
+                        foreach (var arg in newExp.Arguments)
+                        {
+                            ResolveSort(sqlBuilder, arg, fullExp, sortType);
+                        }
+                    }
+                    break;
             }
         }
 
         /// <summary>
         /// 解析成员表达式中的排序信息
         /// </summary>
-        private void ResolveSort(StringBuilder sqlBuilder, MemberExpression memberExp, LambdaExpression fullLambda, SortType sortType)
+        private void ResolveSort(StringBuilder sqlBuilder, MemberExpression memberExp, SortType sortType)
         {
+            var sort = sortType == SortType.Asc ? "ASC" : "DESC";
             switch (memberExp.Expression!.NodeType)
             {
                 case ExpressionType.Parameter:
-                    //OrderBy(m=>m.id)
-                    var columnName = _queryBody.GetColumnName(memberExp, fullLambda);
-                    sqlBuilder.AppendFormat(" {0} {1},", columnName, sortType == SortType.Asc ? "ASC" : "DESC");
+                    //m => m.Title
+                    var columnName = _queryBody.GetColumnName(memberExp);
+                    sqlBuilder.AppendFormat(" {0} {1},", columnName, sort);
                     break;
                 case ExpressionType.MemberAccess:
+                    //m => m.Title.Length
+                    //m => m.T1.Title
+                    //m => m.T1.Length
+                    //m => m.T1.Title.Length
                     if (memberExp.Expression.Type.IsString())
                     {
-                        columnName = _queryBody.GetColumnName(memberExp.Expression as MemberExpression, fullLambda);
-                        sqlBuilder.AppendFormat(" {0} {1},", _dbAdapter.FunctionMapper(memberExp.Member.Name, columnName), sortType == SortType.Asc ? "ASC" : "DESC");
+                        columnName = _queryBody.GetColumnName(memberExp.Expression);
+                        sqlBuilder.AppendFormat(" {0} {1},", _dbAdapter.FunctionMapper(memberExp.Member.Name, columnName), sort);
                     }
+                    else if (DbConstants.ENTITY_INTERFACE_TYPE.IsImplementType(memberExp.Expression.Type))
+                    {
+                        columnName = _queryBody.GetColumnName(memberExp);
+                        sqlBuilder.AppendFormat(" {0} {1},", columnName, sort);
+                    }
+
                     break;
             }
         }

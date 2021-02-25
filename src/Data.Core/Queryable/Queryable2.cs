@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Mkh.Data.Abstractions;
 using Mkh.Data.Abstractions.Entities;
 using Mkh.Data.Abstractions.Pagination;
 using Mkh.Data.Abstractions.Queryable;
@@ -14,7 +15,7 @@ namespace Mkh.Data.Core.Queryable
 {
     internal class Queryable<TEntity, TEntity2> : Queryable, IQueryable<TEntity, TEntity2> where TEntity : IEntity, new() where TEntity2 : IEntity, new()
     {
-        public Queryable(QueryBody queryBody, JoinType joinType, Expression<Func<TEntity, TEntity2, bool>> onExpression, string tableName, bool noLock) : base(queryBody)
+        public Queryable(QueryBody queryBody, JoinType joinType, Expression<Func<IQueryableJoins<TEntity, TEntity2>, bool>> onExpression, string tableName, bool noLock) : base(queryBody)
         {
             var entityDescriptor = _queryBody.GetEntityDescriptor<TEntity2>();
             var join = new QueryJoin(entityDescriptor, "T2", joinType, onExpression, noLock);
@@ -42,13 +43,13 @@ namespace Mkh.Data.Core.Queryable
             return this;
         }
 
-        public IQueryable<TEntity, TEntity2> OrderBy<TKey>(Expression<Func<TEntity, TEntity2, TKey>> expression)
+        public IQueryable<TEntity, TEntity2> OrderBy<TKey>(Expression<Func<IQueryableJoins<TEntity, TEntity2>, TKey>> expression)
         {
             _queryBody.SetSort(expression, SortType.Asc);
             return this;
         }
 
-        public IQueryable<TEntity, TEntity2> OrderByDescending<TKey>(Expression<Func<TEntity, TEntity2, TKey>> expression)
+        public IQueryable<TEntity, TEntity2> OrderByDescending<TKey>(Expression<Func<IQueryableJoins<TEntity, TEntity2>, TKey>> expression)
         {
             _queryBody.SetSort(expression, SortType.Desc);
             return this;
@@ -58,7 +59,7 @@ namespace Mkh.Data.Core.Queryable
 
         #region ==Where==
 
-        public IQueryable<TEntity, TEntity2> Where(Expression<Func<TEntity, TEntity2, bool>> expression)
+        public IQueryable<TEntity, TEntity2> Where(Expression<Func<IQueryableJoins<TEntity, TEntity2>, bool>> expression)
         {
             _queryBody.SetWhere(expression);
             return this;
@@ -70,7 +71,7 @@ namespace Mkh.Data.Core.Queryable
             return this;
         }
 
-        public IQueryable<TEntity, TEntity2> WhereIf(bool condition, Expression<Func<TEntity, TEntity2, bool>> expression)
+        public IQueryable<TEntity, TEntity2> WhereIf(bool condition, Expression<Func<IQueryableJoins<TEntity, TEntity2>, bool>> expression)
         {
             if (condition)
             {
@@ -89,7 +90,7 @@ namespace Mkh.Data.Core.Queryable
             return this;
         }
 
-        public IQueryable<TEntity, TEntity2> WhereIfElse(bool condition, Expression<Func<TEntity, TEntity2, bool>> ifExpression, Expression<Func<TEntity, TEntity2, bool>> elseExpression)
+        public IQueryable<TEntity, TEntity2> WhereIfElse(bool condition, Expression<Func<IQueryableJoins<TEntity, TEntity2>, bool>> ifExpression, Expression<Func<IQueryableJoins<TEntity, TEntity2>, bool>> elseExpression)
         {
             _queryBody.SetWhere(condition ? ifExpression : elseExpression);
             return this;
@@ -101,7 +102,7 @@ namespace Mkh.Data.Core.Queryable
             return this;
         }
 
-        public IQueryable<TEntity, TEntity2> WhereNotNull(string condition, Expression<Func<TEntity, TEntity2, bool>> expression)
+        public IQueryable<TEntity, TEntity2> WhereNotNull(string condition, Expression<Func<IQueryableJoins<TEntity, TEntity2>, bool>> expression)
         {
             if (condition.NotNull())
             {
@@ -111,7 +112,7 @@ namespace Mkh.Data.Core.Queryable
             return this;
         }
 
-        public IQueryable<TEntity, TEntity2> WhereNotNull(string condition, Expression<Func<TEntity, TEntity2, bool>> ifExpression, Expression<Func<TEntity, TEntity2, bool>> elseExpression)
+        public IQueryable<TEntity, TEntity2> WhereNotNull(string condition, Expression<Func<IQueryableJoins<TEntity, TEntity2>, bool>> ifExpression, Expression<Func<IQueryableJoins<TEntity, TEntity2>, bool>> elseExpression)
         {
             _queryBody.SetWhere(condition.NotNull() ? ifExpression : elseExpression);
             return this;
@@ -133,7 +134,7 @@ namespace Mkh.Data.Core.Queryable
             return this;
         }
 
-        public IQueryable<TEntity, TEntity2> WhereNotNull(object condition, Expression<Func<TEntity, TEntity2, bool>> expression)
+        public IQueryable<TEntity, TEntity2> WhereNotNull(object condition, Expression<Func<IQueryableJoins<TEntity, TEntity2>, bool>> expression)
         {
             if (condition != null)
             {
@@ -143,7 +144,7 @@ namespace Mkh.Data.Core.Queryable
             return this;
         }
 
-        public IQueryable<TEntity, TEntity2> WhereNotNull(object condition, Expression<Func<TEntity, TEntity2, bool>> ifExpression, Expression<Func<TEntity, TEntity2, bool>> elseExpression)
+        public IQueryable<TEntity, TEntity2> WhereNotNull(object condition, Expression<Func<IQueryableJoins<TEntity, TEntity2>, bool>> ifExpression, Expression<Func<IQueryableJoins<TEntity, TEntity2>, bool>> elseExpression)
         {
             _queryBody.SetWhere(condition != null ? ifExpression : elseExpression);
             return this;
@@ -165,7 +166,7 @@ namespace Mkh.Data.Core.Queryable
             return this;
         }
 
-        public IQueryable<TEntity, TEntity2> WhereNotEmpty(Guid condition, Expression<Func<TEntity, TEntity2, bool>> expression)
+        public IQueryable<TEntity, TEntity2> WhereNotEmpty(Guid condition, Expression<Func<IQueryableJoins<TEntity, TEntity2>, bool>> expression)
         {
             if (condition != Guid.Empty)
             {
@@ -185,7 +186,7 @@ namespace Mkh.Data.Core.Queryable
             return this;
         }
 
-        public IQueryable<TEntity, TEntity2> WhereNotEmpty(Guid condition, Expression<Func<TEntity, TEntity2, bool>> ifExpression, Expression<Func<TEntity, TEntity2, bool>> elseExpression)
+        public IQueryable<TEntity, TEntity2> WhereNotEmpty(Guid condition, Expression<Func<IQueryableJoins<TEntity, TEntity2>, bool>> ifExpression, Expression<Func<IQueryableJoins<TEntity, TEntity2>, bool>> elseExpression)
         {
             _queryBody.SetWhere(condition != Guid.Empty ? ifExpression : elseExpression);
             return this;
@@ -201,49 +202,49 @@ namespace Mkh.Data.Core.Queryable
 
         #region ==SubQuery==
 
-        public IQueryable<TEntity, TEntity2> SubQueryEqual<TKey>(Expression<Func<TEntity, TEntity2, TKey>> key, IQueryable queryable)
+        public IQueryable<TEntity, TEntity2> SubQueryEqual<TKey>(Expression<Func<IQueryableJoins<TEntity, TEntity2>, TKey>> key, IQueryable queryable)
         {
             _queryBody.SetWhere(key, "=", queryable);
             return this;
         }
 
-        public IQueryable<TEntity, TEntity2> SubQueryNotEqual<TKey>(Expression<Func<TEntity, TEntity2, TKey>> key, IQueryable queryable)
+        public IQueryable<TEntity, TEntity2> SubQueryNotEqual<TKey>(Expression<Func<IQueryableJoins<TEntity, TEntity2>, TKey>> key, IQueryable queryable)
         {
             _queryBody.SetWhere(key, "<>", queryable);
             return this;
         }
 
-        public IQueryable<TEntity, TEntity2> SubQueryGreaterThan<TKey>(Expression<Func<TEntity, TEntity2, TKey>> key, IQueryable queryable)
+        public IQueryable<TEntity, TEntity2> SubQueryGreaterThan<TKey>(Expression<Func<IQueryableJoins<TEntity, TEntity2>, TKey>> key, IQueryable queryable)
         {
             _queryBody.SetWhere(key, ">", queryable);
             return this;
         }
 
-        public IQueryable<TEntity, TEntity2> SubQueryGreaterThanOrEqual<TKey>(Expression<Func<TEntity, TEntity2, TKey>> key, IQueryable queryable)
+        public IQueryable<TEntity, TEntity2> SubQueryGreaterThanOrEqual<TKey>(Expression<Func<IQueryableJoins<TEntity, TEntity2>, TKey>> key, IQueryable queryable)
         {
             _queryBody.SetWhere(key, ">=", queryable);
             return this;
         }
 
-        public IQueryable<TEntity, TEntity2> SubQueryLessThan<TKey>(Expression<Func<TEntity, TEntity2, TKey>> key, IQueryable queryable)
+        public IQueryable<TEntity, TEntity2> SubQueryLessThan<TKey>(Expression<Func<IQueryableJoins<TEntity, TEntity2>, TKey>> key, IQueryable queryable)
         {
             _queryBody.SetWhere(key, "<", queryable);
             return this;
         }
 
-        public IQueryable<TEntity, TEntity2> SubQueryLessThanOrEqual<TKey>(Expression<Func<TEntity, TEntity2, TKey>> key, IQueryable queryable)
+        public IQueryable<TEntity, TEntity2> SubQueryLessThanOrEqual<TKey>(Expression<Func<IQueryableJoins<TEntity, TEntity2>, TKey>> key, IQueryable queryable)
         {
             _queryBody.SetWhere(key, "<=", queryable);
             return this;
         }
 
-        public IQueryable<TEntity, TEntity2> SubQueryIn<TKey>(Expression<Func<TEntity, TEntity2, TKey>> key, IQueryable queryable)
+        public IQueryable<TEntity, TEntity2> SubQueryIn<TKey>(Expression<Func<IQueryableJoins<TEntity, TEntity2>, TKey>> key, IQueryable queryable)
         {
             _queryBody.SetWhere(key, "IN", queryable);
             return this;
         }
 
-        public IQueryable<TEntity, TEntity2> SubQueryNotIn<TKey>(Expression<Func<TEntity, TEntity2, TKey>> key, IQueryable queryable)
+        public IQueryable<TEntity, TEntity2> SubQueryNotIn<TKey>(Expression<Func<IQueryableJoins<TEntity, TEntity2>, TKey>> key, IQueryable queryable)
         {
             _queryBody.SetWhere(key, "NOT IN", queryable);
             return this;
@@ -263,7 +264,7 @@ namespace Mkh.Data.Core.Queryable
 
         #region ==Select==
 
-        public IQueryable<TEntity, TEntity2> Select<TResult>(Expression<Func<TEntity, TEntity2, TResult>> expression)
+        public IQueryable<TEntity, TEntity2> Select<TResult>(Expression<Func<IQueryableJoins<TEntity, TEntity2>, TResult>> expression)
         {
             _queryBody.SetSelect(expression);
             return this;
@@ -275,7 +276,7 @@ namespace Mkh.Data.Core.Queryable
             return this;
         }
 
-        public IQueryable<TEntity, TEntity2> SelectExclude<TResult>(Expression<Func<TEntity, TEntity2, TResult>> expression)
+        public IQueryable<TEntity, TEntity2> SelectExclude<TResult>(Expression<Func<IQueryableJoins<TEntity, TEntity2>, TResult>> expression)
         {
             _queryBody.SetSelectExclude(expression);
             return this;
@@ -285,17 +286,17 @@ namespace Mkh.Data.Core.Queryable
 
         #region ==Join==
 
-        public IQueryable<TEntity, TEntity2, TEntity3> LeftJoin<TEntity3>(Expression<Func<TEntity, TEntity2, TEntity3, bool>> onExpression, string tableName = null, bool noLock = true) where TEntity3 : IEntity, new()
+        public IQueryable<TEntity, TEntity2, TEntity3> LeftJoin<TEntity3>(Expression<Func<IQueryableJoins<TEntity, TEntity2, TEntity3>, bool>> onExpression, string tableName = null, bool noLock = true) where TEntity3 : IEntity, new()
         {
             return new Queryable<TEntity, TEntity2, TEntity3>(_queryBody, JoinType.Left, onExpression, tableName, noLock);
         }
 
-        public IQueryable<TEntity, TEntity2, TEntity3> InnerJoin<TEntity3>(Expression<Func<TEntity, TEntity2, TEntity3, bool>> onExpression, string tableName = null, bool noLock = true) where TEntity3 : IEntity, new()
+        public IQueryable<TEntity, TEntity2, TEntity3> InnerJoin<TEntity3>(Expression<Func<IQueryableJoins<TEntity, TEntity2, TEntity3>, bool>> onExpression, string tableName = null, bool noLock = true) where TEntity3 : IEntity, new()
         {
             return new Queryable<TEntity, TEntity2, TEntity3>(_queryBody, JoinType.Inner, onExpression, tableName, noLock);
         }
 
-        public IQueryable<TEntity, TEntity2, TEntity3> RightJoin<TEntity3>(Expression<Func<TEntity, TEntity2, TEntity3, bool>> onExpression, string tableName = null, bool noLock = true) where TEntity3 : IEntity, new()
+        public IQueryable<TEntity, TEntity2, TEntity3> RightJoin<TEntity3>(Expression<Func<IQueryableJoins<TEntity, TEntity2, TEntity3>, bool>> onExpression, string tableName = null, bool noLock = true) where TEntity3 : IEntity, new()
         {
             return new Queryable<TEntity, TEntity2, TEntity3>(_queryBody, JoinType.Right, onExpression, tableName, noLock);
         }
@@ -356,31 +357,31 @@ namespace Mkh.Data.Core.Queryable
 
         #region ==Function==
 
-        public Task<TResult> ToMax<TResult>(Expression<Func<TEntity, TEntity2, TResult>> expression)
+        public Task<TResult> ToMax<TResult>(Expression<Func<IQueryableJoins<TEntity, TEntity2>, TResult>> expression)
         {
-            return base.Max<TResult>(expression);
+            return base.ToMax<TResult>(expression);
         }
 
-        public Task<TResult> ToMin<TResult>(Expression<Func<TEntity, TEntity2, TResult>> expression)
+        public Task<TResult> ToMin<TResult>(Expression<Func<IQueryableJoins<TEntity, TEntity2>, TResult>> expression)
         {
-            return base.Min<TResult>(expression);
+            return base.ToMin<TResult>(expression);
         }
 
-        public Task<TResult> ToSum<TResult>(Expression<Func<TEntity, TEntity2, TResult>> expression)
+        public Task<TResult> ToSum<TResult>(Expression<Func<IQueryableJoins<TEntity, TEntity2>, TResult>> expression)
         {
-            return base.Sum<TResult>(expression);
+            return base.ToSum<TResult>(expression);
         }
 
-        public Task<TResult> ToAvg<TResult>(Expression<Func<TEntity, TEntity2, TResult>> expression)
+        public Task<TResult> ToAvg<TResult>(Expression<Func<IQueryableJoins<TEntity, TEntity2>, TResult>> expression)
         {
-            return base.Avg<TResult>(expression);
+            return base.ToAvg<TResult>(expression);
         }
 
         #endregion
 
         #region ==GroupBy==
 
-        public IGroupingQueryable<TResult, TEntity, TEntity2> GroupBy<TResult>(Expression<Func<TEntity, TEntity2, TResult>> expression)
+        public IGroupingQueryable<TResult, TEntity, TEntity2> GroupBy<TResult>(Expression<Func<IQueryableJoins<TEntity, TEntity2>, TResult>> expression)
         {
             return new GroupingQueryable<TResult, TEntity, TEntity2>(_sqlBuilder, _logger, expression);
         }
@@ -392,6 +393,16 @@ namespace Mkh.Data.Core.Queryable
         public IQueryable<TEntity, TEntity2> Copy()
         {
             return new Queryable<TEntity, TEntity2>(_queryBody.Copy());
+        }
+
+        #endregion
+
+        #region ==Uow==
+
+        public IQueryable<TEntity, TEntity2> UseUow(IUnitOfWork uow)
+        {
+            _queryBody.SetUow(uow);
+            return this;
         }
 
         #endregion

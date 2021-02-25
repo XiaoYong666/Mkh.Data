@@ -14,16 +14,16 @@ namespace Data.Adapter.MySql.Test
         [Fact]
         public async void SaveChangesTest()
         {
+            await ClearTable();
+
             using var uow = _dbContext.NewUnitOfWork();
-            var categoryRepository = uow.Get<ICategoryRepository>();
-            var articleRepository = uow.Get<IArticleRepository>();
 
             var category = new CategoryEntity
             {
                 Name = ".Net"
             };
 
-            await categoryRepository.Add(category);
+            await _categoryRepository.Add(category, uow);
 
             var article = new ArticleEntity
             {
@@ -32,35 +32,46 @@ namespace Data.Adapter.MySql.Test
                 Content = "工作单元测试"
             };
 
-            await articleRepository.Add(article);
+            await _articleRepository.Add(article, uow);
 
             uow.SaveChanges();
+
+            var article1 = await _articleRepository.Get(article.Id);
+
+            Assert.Equal(article1.Title, article.Title);
         }
 
         [Fact]
         public async void RollbackTest()
         {
+            await ClearTable();
+
             using var uow = _dbContext.NewUnitOfWork();
-            var categoryRepository = uow.Get<ICategoryRepository>();
-            var articleRepository = uow.Get<IArticleRepository>();
-
-            var category = new CategoryEntity
+            try
             {
-                Name = ".Net"
-            };
+                var category = new CategoryEntity
+                {
+                    Name = null
+                };
 
-            await categoryRepository.Add(category);
+                await _categoryRepository.Add(category, uow);
 
-            var article = new ArticleEntity
+                var article = new ArticleEntity
+                {
+                    CategoryId = category.Id,
+                    Title = "工作单元测试",
+                    Content = "工作单元测试"
+                };
+
+                await _articleRepository.Add(article, uow);
+
+                uow.SaveChanges();
+            }
+            catch
             {
-                CategoryId = category.Id,
-                Title = "工作单元测试",
-                Content = "工作单元测试"
-            };
-
-            await articleRepository.Add(article);
-
-            Assert.True(article.Id > 0);
+                uow.Rollback();
+                Assert.True(true);
+            }
         }
     }
 }

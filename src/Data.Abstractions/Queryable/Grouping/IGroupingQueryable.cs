@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
-using Mkh.Data.Abstractions.Pagination;
 
 namespace Mkh.Data.Abstractions.Queryable.Grouping
 {
@@ -60,64 +59,6 @@ namespace Mkh.Data.Abstractions.Queryable.Grouping
         /// </summary>
         /// <returns></returns>
         Task<IDataReader> ToReader();
-
-        #endregion
-
-        #region ==Pagination==
-
-        /// <summary>
-        /// 分页查询，返回Dynamic类型
-        /// </summary>
-        /// <returns></returns>
-        Task<IList<dynamic>> ToPaginationDynamic();
-
-        /// <summary>
-        /// 分页查询，返回Dynamic类型
-        /// </summary>
-        /// <param name="paging">分页对象</param>
-        /// <returns></returns>
-        Task<IList<dynamic>> ToPaginationDynamic(Paging paging);
-
-        /// <summary>
-        /// 分页查询，返回指定类型
-        /// </summary>
-        /// <returns></returns>
-        Task<IList<TResult>> ToPagination<TResult>();
-
-        /// <summary>
-        /// 分页查询，返回指定类型
-        /// </summary>
-        /// <param name="paging">分页对象</param>
-        /// <returns></returns>
-        Task<IList<TResult>> ToPagination<TResult>(Paging paging);
-
-        /// <summary>
-        /// 获取分页查询列表SQL
-        /// </summary>
-        /// <returns></returns>
-        string ToPaginationSql(Paging paging);
-
-        /// <summary>
-        /// 获取分页查询列表SQL，并返回参数
-        /// </summary>
-        /// <param name="paging">分页信息</param>
-        /// <param name="parameters"></param>
-        /// <returns></returns>
-        string ToPaginationSql(Paging paging, out IQueryParameters parameters);
-
-        /// <summary>
-        /// 获取分页查询列表SQL，并设置参数
-        /// </summary>
-        /// <param name="paging">分页信息</param>
-        /// <param name="parameters"></param>
-        /// <returns></returns>
-        string ToPaginationSql(Paging paging, IQueryParameters parameters);
-
-        /// <summary>
-        /// 获取分页查询列表SQL，并且不使用参数化
-        /// </summary>
-        /// <returns></returns>
-        string ToPaginationSqlNotUseParameters(Paging paging);
 
         #endregion
 

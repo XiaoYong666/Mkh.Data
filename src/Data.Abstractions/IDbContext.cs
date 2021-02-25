@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Data;
 using Mkh.Data.Abstractions.Adapter;
 using Mkh.Data.Abstractions.Descriptors;
@@ -13,11 +12,6 @@ namespace Mkh.Data.Abstractions
     public interface IDbContext
     {
         #region ==属性==
-
-        /// <summary>
-        /// 服务容器
-        /// </summary>
-        IServiceProvider Services { get; }
 
         /// <summary>
         /// 数据库配置项
@@ -61,15 +55,9 @@ namespace Mkh.Data.Abstractions
         /// <summary>
         /// 创建工作单元
         /// </summary>
-        /// <returns></returns>
-        IUnitOfWork NewUnitOfWork();
-
-        /// <summary>
-        /// 创建工作单元
-        /// </summary>
         /// <param name="isolationLevel">指定锁级别</param>
         /// <returns></returns>
-        IUnitOfWork NewUnitOfWork(IsolationLevel isolationLevel);
+        IUnitOfWork NewUnitOfWork(IsolationLevel? isolationLevel = null);
 
         #endregion
     }

@@ -1,6 +1,10 @@
 using System;
+using System.Threading.Tasks;
 using Data.Common.Test;
+using Data.Common.Test.Domain.Article;
+using Data.Common.Test.Domain.Category;
 using Data.Common.Test.Infrastructure;
+using Data.Common.Test.Service;
 using Divergic.Logging.Xunit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -13,6 +17,8 @@ namespace Data.Adapter.MySql.Test
     {
         protected readonly IServiceProvider _serviceProvider;
         protected readonly IDbContext _dbContext;
+        protected readonly IArticleRepository _articleRepository;
+        protected readonly ICategoryRepository _categoryRepository;
 
         public BaseTest(ITestOutputHelper output)
         {
@@ -33,12 +39,21 @@ namespace Data.Adapter.MySql.Test
             services
                 .AddMkhDbWidthMySql<BlogDbContext>(connString, options =>
                 {
-                    options.Log = true;//开启日志
+                    //开启日志
+                    options.Log = true; 
                 })
                 .AddRepositories(typeof(BlogDbContext).Assembly);
 
             _serviceProvider = services.BuildServiceProvider();
             _dbContext = _serviceProvider.GetService<BlogDbContext>();
+            _articleRepository = _serviceProvider.GetService<IArticleRepository>();
+            _categoryRepository = _serviceProvider.GetService<ICategoryRepository>();
+        }
+
+        protected async Task ClearTable()
+        {
+            await _articleRepository.Execute("truncate article;");
+            await _articleRepository.Execute("truncate mycategory;");
         }
     }
 }

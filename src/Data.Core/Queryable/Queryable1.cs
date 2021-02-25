@@ -282,17 +282,17 @@ namespace Mkh.Data.Core.Queryable
 
         #region ==表连接==
 
-        public IQueryable<TEntity, TEntity2> LeftJoin<TEntity2>(Expression<Func<TEntity, TEntity2, bool>> onExpression, string tableName = null, bool noLock = true) where TEntity2 : IEntity, new()
+        public IQueryable<TEntity, TEntity2> LeftJoin<TEntity2>(Expression<Func<IQueryableJoins<TEntity, TEntity2>, bool>> onExpression, string tableName = null, bool noLock = true) where TEntity2 : IEntity, new()
         {
             return new Queryable<TEntity, TEntity2>(_queryBody, JoinType.Left, onExpression, tableName, noLock);
         }
 
-        public IQueryable<TEntity, TEntity2> InnerJoin<TEntity2>(Expression<Func<TEntity, TEntity2, bool>> onExpression, string tableName = null, bool noLock = true) where TEntity2 : IEntity, new()
+        public IQueryable<TEntity, TEntity2> InnerJoin<TEntity2>(Expression<Func<IQueryableJoins<TEntity, TEntity2>, bool>> onExpression, string tableName = null, bool noLock = true) where TEntity2 : IEntity, new()
         {
             return new Queryable<TEntity, TEntity2>(_queryBody, JoinType.Inner, onExpression, tableName, noLock);
         }
 
-        public IQueryable<TEntity, TEntity2> RightJoin<TEntity2>(Expression<Func<TEntity, TEntity2, bool>> onExpression, string tableName = null, bool noLock = true) where TEntity2 : IEntity, new()
+        public IQueryable<TEntity, TEntity2> RightJoin<TEntity2>(Expression<Func<IQueryableJoins<TEntity, TEntity2>, bool>> onExpression, string tableName = null, bool noLock = true) where TEntity2 : IEntity, new()
         {
             return new Queryable<TEntity, TEntity2>(_queryBody, JoinType.Right, onExpression, tableName, noLock);
         }
@@ -332,7 +332,7 @@ namespace Mkh.Data.Core.Queryable
 
             var sql = _sqlBuilder.BuildUpdateSql(out IQueryParameters parameters);
             _logger.Write("Update", sql);
-            return _repository.Execute(sql, parameters.ToDynamicParameters());
+            return _repository.Execute(sql, parameters.ToDynamicParameters(), _queryBody.Uow);
         }
 
         public async Task<bool> ToUpdate(string updateSql, Dictionary<string, object> parameters = null)
@@ -354,7 +354,7 @@ namespace Mkh.Data.Core.Queryable
                 }
             }
 
-            return _repository.Execute(sql, dynamicParameters);
+            return _repository.Execute(sql, dynamicParameters, _queryBody.Uow);
         }
 
         public string ToUpdateSql(Expression<Func<TEntity, TEntity>> expression)
@@ -418,7 +418,7 @@ namespace Mkh.Data.Core.Queryable
         {
             var sql = _sqlBuilder.BuildDeleteSql(out IQueryParameters parameters);
             _logger.Write("Delete", sql);
-            return _repository.Execute(sql, parameters.ToDynamicParameters());
+            return _repository.Execute(sql, parameters.ToDynamicParameters(), _queryBody.Uow);
         }
 
         public string ToDeleteSql()
@@ -454,7 +454,7 @@ namespace Mkh.Data.Core.Queryable
         {
             var sql = _sqlBuilder.BuildSoftDeleteSql(out IQueryParameters parameters);
             _logger.Write("Delete", sql);
-            return _repository.Execute(sql, parameters.ToDynamicParameters());
+            return _repository.Execute(sql, parameters.ToDynamicParameters(), _queryBody.Uow);
         }
 
         public string ToSoftDeleteSql()
@@ -515,22 +515,22 @@ namespace Mkh.Data.Core.Queryable
 
         public Task<TResult> ToMax<TResult>(Expression<Func<TEntity, TResult>> expression)
         {
-            return base.Max<TResult>(expression);
+            return base.ToMax<TResult>(expression);
         }
 
         public Task<TResult> ToMin<TResult>(Expression<Func<TEntity, TResult>> expression)
         {
-            return base.Min<TResult>(expression);
+            return base.ToMin<TResult>(expression);
         }
 
         public Task<TResult> ToSum<TResult>(Expression<Func<TEntity, TResult>> expression)
         {
-            return base.Sum<TResult>(expression);
+            return base.ToSum<TResult>(expression);
         }
 
         public Task<TResult> ToAvg<TResult>(Expression<Func<TEntity, TResult>> expression)
         {
-            return base.Avg<TResult>(expression);
+            return base.ToAvg<TResult>(expression);
         }
 
         #endregion
@@ -549,6 +549,16 @@ namespace Mkh.Data.Core.Queryable
         public IQueryable<TEntity> Copy()
         {
             return new Queryable<TEntity>(_queryBody.Copy());
+        }
+
+        #endregion
+
+        #region ==使用工作单元==
+
+        public IQueryable<TEntity> UseUow(IUnitOfWork uow)
+        {
+            _queryBody.SetUow(uow);
+            return this;
         }
 
         #endregion

@@ -1,75 +1,42 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Reflection;
+﻿using System.Data;
 using Mkh.Data.Abstractions;
 
 namespace Mkh.Data.Core
 {
-    public class UnitOfWorkAbstract : IUnitOfWork
+    internal class UnitOfWork : IUnitOfWork
     {
-        private readonly IDbContext _dbContext;
-        private IDbTransaction _transaction;
-        private Dictionary<RuntimeTypeHandle, IRepository> _repositories = new Dictionary<RuntimeTypeHandle, IRepository>();
+        public IDbTransaction Transaction { get; private set; }
 
-        internal UnitOfWorkAbstract(IDbContext dbContext)
+        public UnitOfWork(IDbContext dbContext, IsolationLevel? isolationLevel)
         {
-            _dbContext = dbContext;
             var con = dbContext.NewConnection();
             con.Open();
-            _transaction = con.BeginTransaction();
-        }
-
-        internal UnitOfWorkAbstract(IDbContext dbContext, IsolationLevel isolationLevel)
-        {
-            _dbContext = dbContext;
-            var con = dbContext.NewConnection();
-            con.Open();
-            _transaction = con.BeginTransaction(isolationLevel);
-        }
-
-        public TRepository Get<TRepository>() where TRepository : IRepository
-        {
-            var interfaceType = typeof(TRepository);
-            var descriptor = _dbContext.RepositoryDescriptors.FirstOrDefault(m => m.InterfaceType == interfaceType);
-            if (descriptor == null)
-            {
-                throw new Exception($"仓储({interfaceType.FullName})不存在");
-            }
-
-            var repository = _repositories.FirstOrDefault(m => m.Key.Equals(interfaceType.TypeHandle));
-            if (repository.Value == null)
-            {
-                var implementType = descriptor.ImplementType;
-                var instance = (TRepository)Activator.CreateInstance(implementType);
-                var initMethod = implementType.GetMethod("InitWidthTransaction", BindingFlags.Instance | BindingFlags.NonPublic);
-                initMethod.Invoke(instance, new Object[] { _dbContext, _transaction });
-
-                _repositories.Add(interfaceType.TypeHandle, instance);
-
-                return instance;
-            }
-
-            return (TRepository)repository.Value;
+            Transaction = isolationLevel != null ? con.BeginTransaction(isolationLevel.Value) : con.BeginTransaction();
         }
 
         public void SaveChanges()
         {
-            if (_transaction != null)
+            if (Transaction != null)
             {
-                _transaction.Commit();
-                _transaction.Connection?.Close();
-                _transaction = null;
+                Transaction.Commit();
+                Transaction.Connection?.Close();
+                Transaction = null;
             }
+        }
 
-            Dispose();
+        public void Rollback()
+        {
+            if (Transaction != null)
+            {
+                Transaction.Rollback();
+                Transaction.Connection?.Close();
+                Transaction = null;
+            }
         }
 
         public void Dispose()
         {
-            _transaction?.Rollback();
-            _repositories = null;
+            Rollback();
         }
     }
 }

@@ -700,7 +700,7 @@ namespace Mkh.Data
     /// <summary>
     /// 类型常量
     /// </summary>
-    public class TypeConst
+    internal class TypeConst
     {
         /// <summary>
         /// String

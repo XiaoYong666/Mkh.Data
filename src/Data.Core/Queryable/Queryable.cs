@@ -46,8 +46,8 @@ namespace Mkh.Data.Core.Queryable
         public async Task<IList<TResult>> ToList<TResult>()
         {
             var sql = _sqlBuilder.BuildListSql(out IQueryParameters parameters);
-            _logger.Write("List", sql);
-            return (await _repository.Query<TResult>(sql, parameters.ToDynamicParameters())).ToList();
+            _logger.Write("ToList", sql);
+            return (await _repository.Query<TResult>(sql, parameters.ToDynamicParameters(), _queryBody.Uow)).ToList();
         }
 
         public string ToListSql()
@@ -77,8 +77,8 @@ namespace Mkh.Data.Core.Queryable
         public Task<IDataReader> ToReader()
         {
             var sql = _sqlBuilder.BuildListSql(out IQueryParameters parameters);
-            _logger.Write("Reader", sql);
-            return _repository.ExecuteReader(sql, parameters.ToDynamicParameters());
+            _logger.Write("ToReader", sql);
+            return _repository.ExecuteReader(sql, parameters.ToDynamicParameters(), _queryBody.Uow);
         }
 
         #endregion
@@ -108,9 +108,9 @@ namespace Mkh.Data.Core.Queryable
                 _queryBody.SetLimit(paging.Skip, paging.Size);
 
             var sql = _sqlBuilder.BuildPaginationSql(out IQueryParameters parameters);
-            _logger.Write("Pagination", sql);
+            _logger.Write("ToPagination", sql);
 
-            var task = _repository.Query<TResult>(sql, parameters.ToDynamicParameters());
+            var task = _repository.Query<TResult>(sql, parameters.ToDynamicParameters(), _queryBody.Uow);
 
             if (paging != null && paging.QueryCount)
             {
@@ -172,8 +172,8 @@ namespace Mkh.Data.Core.Queryable
         public Task<TResult> ToFirst<TResult>()
         {
             var sql = _sqlBuilder.BuildFirstSql(out IQueryParameters parameters);
-            _logger.Write("First", sql);
-            return _repository.QueryFirstOrDefault<TResult>(sql, parameters.ToDynamicParameters());
+            _logger.Write("ToFirst", sql);
+            return _repository.QueryFirstOrDefault<TResult>(sql, parameters.ToDynamicParameters(), _queryBody.Uow);
         }
 
         public string ToFirstSql()
@@ -203,8 +203,8 @@ namespace Mkh.Data.Core.Queryable
         public Task<long> ToCount()
         {
             var sql = _sqlBuilder.BuildCountSql(out IQueryParameters parameters);
-            _logger.Write("Count", sql);
-            return _repository.ExecuteScalar<long>(sql, parameters.ToDynamicParameters());
+            _logger.Write("ToCount", sql);
+            return _repository.ExecuteScalar<long>(sql, parameters.ToDynamicParameters(), _queryBody.Uow);
         }
 
         public string ToCountSql()
@@ -234,8 +234,8 @@ namespace Mkh.Data.Core.Queryable
         public async Task<bool> ToExists()
         {
             var sql = _sqlBuilder.BuildExistsSql(out IQueryParameters parameters);
-            _logger.Write("Exists", sql);
-            return await _repository.ExecuteScalar<int>(sql, parameters.ToDynamicParameters()) > 0;
+            _logger.Write("ToExists", sql);
+            return await _repository.ExecuteScalar<int>(sql, parameters.ToDynamicParameters(), _queryBody.Uow) > 0;
         }
 
         public string ToExistsSql()
@@ -262,7 +262,7 @@ namespace Mkh.Data.Core.Queryable
 
         #region ==Max==
 
-        protected Task<TResult> Max<TResult>(LambdaExpression expression)
+        protected Task<TResult> ToMax<TResult>(LambdaExpression expression)
         {
             return ExecuteFunction<TResult>("Max", expression);
         }
@@ -295,7 +295,7 @@ namespace Mkh.Data.Core.Queryable
 
         #region ==Min==
 
-        protected Task<TResult> Min<TResult>(LambdaExpression expression)
+        protected Task<TResult> ToMin<TResult>(LambdaExpression expression)
         {
             return ExecuteFunction<TResult>("Min", expression);
         }
@@ -328,7 +328,7 @@ namespace Mkh.Data.Core.Queryable
 
         #region ==Sum==
 
-        protected Task<TResult> Sum<TResult>(LambdaExpression expression)
+        protected Task<TResult> ToSum<TResult>(LambdaExpression expression)
         {
             return ExecuteFunction<TResult>("Sum", expression);
         }
@@ -361,7 +361,7 @@ namespace Mkh.Data.Core.Queryable
 
         #region ==Avg==
 
-        protected Task<TResult> Avg<TResult>(LambdaExpression expression)
+        protected Task<TResult> ToAvg<TResult>(LambdaExpression expression)
         {
             return ExecuteFunction<TResult>("Avg", expression);
         }
@@ -399,7 +399,7 @@ namespace Mkh.Data.Core.Queryable
             _queryBody.SetFunctionSelect(expression, functionName);
             var sql = _sqlBuilder.BuildFunctionSql(out IQueryParameters parameters);
             _logger.Write(functionName, sql);
-            return _repository.ExecuteScalar<TResult>(sql, parameters.ToDynamicParameters());
+            return _repository.ExecuteScalar<TResult>(sql, parameters.ToDynamicParameters(), _queryBody.Uow);
         }
 
         #endregion

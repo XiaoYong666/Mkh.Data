@@ -9,7 +9,7 @@ namespace Mkh.Data.Abstractions.Queryable.Grouping
     /// </summary>
     /// <typeparam name="TEntity"></typeparam>
     /// <typeparam name="TKey"></typeparam>
-    public interface IGroupingQueryable<TKey, TEntity> : IGroupingQueryable where TEntity : IEntity
+    public interface IGroupingQueryable<TKey, TEntity> : IGroupingQueryable where TEntity : IEntity, new()
     {
         /// <summary>
         /// 聚合过滤
@@ -62,7 +62,7 @@ namespace Mkh.Data.Abstractions.Queryable.Grouping
         IGroupingQueryable<TKey, TEntity> Select<TResult>(Expression<Func<IGrouping<TKey, TEntity>, TResult>> expression);
     }
 
-    public interface IGrouping<out TKey, TEntity> : IGrouping<TKey> where TEntity : IEntity
+    public interface IGrouping<out TKey, TEntity> : IGrouping<TKey> where TEntity : IEntity, new()
     {
         TResult Max<TResult>(Expression<Func<TEntity, TResult>> where);
 

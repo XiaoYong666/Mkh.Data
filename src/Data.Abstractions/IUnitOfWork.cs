@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data;
 
 namespace Mkh.Data.Abstractions
 {
@@ -8,15 +9,18 @@ namespace Mkh.Data.Abstractions
     public interface IUnitOfWork : IDisposable
     {
         /// <summary>
-        /// 获取指定类型仓储实例
+        /// 事务
         /// </summary>
-        /// <typeparam name="TRepository"></typeparam>
-        /// <returns></returns>
-        TRepository Get<TRepository>() where TRepository : IRepository;
+        IDbTransaction Transaction { get; }
 
         /// <summary>
         /// 保存变更
         /// </summary>
         void SaveChanges();
+
+        /// <summary>
+        /// 回滚
+        /// </summary>
+        void Rollback();
     }
 }

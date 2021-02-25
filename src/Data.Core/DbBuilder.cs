@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+using Microsoft.Extensions.DependencyInjection;
 using Mkh.Data.Abstractions;
 
 namespace Mkh.Data.Core
@@ -9,10 +10,13 @@ namespace Mkh.Data.Core
         {
             Services = services;
             DbContext = dbContext;
+            DbContextTypeHandle = typeof(DbContext).TypeHandle;
         }
 
         public IServiceCollection Services { get; }
 
         public IDbContext DbContext { get; }
+
+        public RuntimeTypeHandle DbContextTypeHandle { get; }
     }
 }

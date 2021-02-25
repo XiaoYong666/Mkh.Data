@@ -25,7 +25,7 @@ namespace Mkh.Data.Abstractions.Entities
         /// <summary>
         /// 删除时间
         /// </summary>
-        DateTime DeletedTime { get; set; }
+        DateTime? DeletedTime { get; set; }
     }
 
     /// <summary>

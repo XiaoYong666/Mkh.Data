@@ -1,5 +1,4 @@
 ﻿using Data.Common.Test.Domain.Article;
-using Data.Common.Test.Domain.Category;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;
@@ -16,7 +15,7 @@ namespace Data.Adapter.MySql.Test
         }
 
         [Fact]
-        public void Test1()
+        public void ToListTest1()
         {
             var query = _repository.Find().GroupBy(m => new { m.Title, m.Deleted })
                 .Select(m => new
@@ -30,23 +29,7 @@ namespace Data.Adapter.MySql.Test
         }
 
         [Fact]
-        public void Test2()
-        {
-            var sql = _repository.Find().LeftJoin<CategoryEntity>((x, y) => x.CategoryId == y.Id)
-                .GroupBy((x, y) => new { name = y.Name.Substring(1, 3) })
-                .Select(m => new
-                {
-                    Sum = m.Sum((x, y) => x.Id),
-                    Count = m.Count(),
-                    name1 = m.Key.name
-                })
-                .ToListSql();
-
-            Assert.Equal("SELECT SUM(T1.`Id`) AS `Sum`,COUNT(0) AS `Count`,SUBSTR(T2.`Name`,2,3) AS `name1` FROM `Article` AS T1 LEFT JOIN `MyCategory` AS T2 ON T1.`CategoryId` = T2.`Id` WHERE `T1`.`Deleted` = 0 GROUP BY SUBSTR(T2.`Name`,2,3)", sql);
-        }
-
-        [Fact]
-        public void Test3()
+        public void ToListTest2()
         {
             var query = _repository.Find()
                 .GroupBy(m => new { m.Deleted })
@@ -61,7 +44,7 @@ namespace Data.Adapter.MySql.Test
         }
 
         [Fact]
-        public void Test4()
+        public void ToListTest3()
         {
             var query = _repository.Find()
                 .Where(m => m.Id > 5)
@@ -81,7 +64,7 @@ namespace Data.Adapter.MySql.Test
         }
 
         [Fact]
-        public void Test5()
+        public void ToListTest4()
         {
             var sql = _repository.Find().GroupBy(m => new { m.Deleted })
                 .Having(m => m.Sum(x => x.Id) > 3)
@@ -96,7 +79,7 @@ namespace Data.Adapter.MySql.Test
         }
 
         [Fact]
-        public void Test6()
+        public void ToListTest5()
         {
             var sql = _repository.Find().GroupBy(m => new { m.Title })
                 .Having(m => m.Sum(x => x.Id) > 3)
@@ -111,24 +94,32 @@ namespace Data.Adapter.MySql.Test
         }
 
         [Fact]
-        public void Test7()
+        public void ToFirstTest1()
         {
-            var sql = _repository.Find().LeftJoin<CategoryEntity>((x, y) => x.CategoryId == y.Id)
-                .GroupBy((x, y) => new
-                {
-                    y.Name
-                })
-                .Having(m => m.Sum((x, y) => x.Id) > 5)
-                .OrderBy(m => m.Sum((x, y) => x.Id))
-                .OrderByDescending(m => m.Key.Name.Substring(2))
+            var query = _repository.Find().GroupBy(m => new { m.Title, m.Deleted })
                 .Select(m => new
                 {
-                    Sum = m.Sum((x, y) => x.Id),
-                    Name = m.Key.Name.Substring(5)
-                })
-                .ToListSql();
+                    Sum = m.Sum(n => n.Id),
+                    m.Key.Title
+                });
 
-            Assert.Equal("SELECT SUM(T1.`Id`) AS `Sum`,SUBSTR(T2.`Name`,6) AS `Name` FROM `Article` AS T1 LEFT JOIN `MyCategory` AS T2 ON T1.`CategoryId` = T2.`Id` WHERE `T1`.`Deleted` = 0 GROUP BY T2.`Name` HAVING SUM(T1.`Id`) > @P1 ORDER BY SUM(T1.`Id`) ASC, SUBSTR(T2.`Name`,3) DESC", sql);
+            var sql = query.ToFirstSql();
+            Assert.Equal("SELECT SUM(`Id`) AS `Sum`,`Title` AS `Title` FROM `Article` WHERE `Deleted` = 0 GROUP BY `Title`, `Deleted` LIMIT 1", sql);
+        }
+
+        [Fact]
+        public void ToFirstTest2()
+        {
+            var query = _repository.Find()
+                .GroupBy(m => new { m.Deleted })
+                .Having(m => m.Sum(x => x.Id) > 3)
+                .Select(m => new { Sum = m.Sum(n => n.Id) });
+
+            var sql = query.ToFirstSql();
+            Assert.Equal("SELECT SUM(`Id`) AS `Sum` FROM `Article` WHERE `Deleted` = 0 GROUP BY `Deleted` HAVING SUM(`Id`) > @P1 LIMIT 1", sql);
+
+            sql = query.ToFirstSqlNotUseParameters();
+            Assert.Equal("SELECT SUM(`Id`) AS `Sum` FROM `Article` WHERE `Deleted` = 0 GROUP BY `Deleted` HAVING SUM(`Id`) > 3 LIMIT 1", sql);
         }
     }
 }
